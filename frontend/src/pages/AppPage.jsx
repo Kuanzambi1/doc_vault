@@ -4,11 +4,13 @@ import DocTable    from '../components/DocTable.jsx'
 import DropZone    from '../components/DropZone.jsx'
 import Modal       from '../components/Modal.jsx'
 import Btn         from '../components/Btn.jsx'
+import UsersPanel  from '../components/UsersPanel.jsx'
 import * as api    from '../api/client.js'
 
 export default function AppPage({ user, onLogout, toast }) {
   // Localização atual (uuid da pasta ou null = raiz)
   const [pastaUuid,   setPastaUuid]   = useState(null)
+  const [view,        setView]        = useState('files') // 'files' | 'users' (admin)
 
   // Documentos
   const [docs,        setDocs]        = useState([])
@@ -18,6 +20,7 @@ export default function AppPage({ user, onLogout, toast }) {
   const [busca,       setBusca]       = useState('')
   const [loadingDocs, setLoadingDocs] = useState(false)
   const [selecionados,setSelecionados]= useState(new Set())
+  const [folders,     setFolders]     = useState([])
 
   // Upload queue
   const [queue,    setQueue]    = useState([])
@@ -147,9 +150,17 @@ export default function AppPage({ user, onLogout, toast }) {
     <div style={s.app}>
       {/* Topbar */}
       <header style={s.topbar}>
-        <div style={s.brand}>
-          <span style={{ color: 'var(--accent)', fontSize: 18 }}>◈</span>
-          <span style={s.brandText}>DocVault</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={s.brand}>
+            <span style={{ color: 'var(--accent)', fontSize: 18 }}>◈</span>
+            <span style={s.brandText}>DocVault</span>
+          </div>
+          {user.role === 'admin' && (
+            <div style={s.tabs}>
+              <button style={{ ...s.tab, background: view === 'files' ? 'var(--accent-bg)' : 'transparent', color: view === 'files' ? 'var(--accent)' : 'var(--text3)' }} onClick={() => setView('files')}>📄 Documentos</button>
+              <button style={{ ...s.tab, background: view === 'users' ? 'var(--accent-bg)' : 'transparent', color: view === 'users' ? 'var(--accent)' : 'var(--text3)' }} onClick={() => setView('users')}>👥 Utilizadores</button>
+            </div>
+          )}
         </div>
         <div style={s.topRight}>
           <span style={s.userName}>{user.nome}</span>
@@ -163,22 +174,39 @@ export default function AppPage({ user, onLogout, toast }) {
           <FolderPanel
             onLocationChange={setPastaUuid}
             onToast={toast}
+            onBreadcrumbChange={setFolders}
           />
         </aside>
 
         {/* Main content */}
         <main style={s.main}>
-          {/* Toolbar */}
+          {view === 'users' ? (
+            <UsersPanel user={user} onToast={toast} />
+          ) : (
+            <>
+              {/* Toolbar */}
           <div style={s.toolbar}>
-            <input
-              style={s.search}
-              placeholder="Pesquisar documentos…"
-              value={busca}
-              onChange={onSearch}
-            />
-            <Btn size="sm" onClick={() => setSelecionados(new Set())}
-              style={{ display: selecionados.size ? 'flex' : 'none', color: 'var(--text3)' }}
-              variant="ghost">Limpar seleção</Btn>
+            {/* Breadcrumb */}
+            <div style={s.breadcrumb}>
+              <button style={s.bcBtn} onClick={() => setPastaUuid(null)}>Início</button>
+              {folders.map((b, i) => (
+                <React.Fragment key={b.uuid}>
+                  <span style={s.bcSep}>›</span>
+                  <button style={{ ...s.bcBtn, color: i === folders.length - 1 ? 'var(--text)' : 'var(--text2)', fontWeight: i === folders.length - 1 ? 500 : 400 }} onClick={() => setPastaUuid(b.uuid)}>{b.nome}</button>
+                </React.Fragment>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+              <input
+                style={s.search}
+                placeholder="Pesquisar documentos…"
+                value={busca}
+                onChange={onSearch}
+              />
+              <Btn size="sm" onClick={() => setSelecionados(new Set())}
+                style={{ display: selecionados.size ? 'flex' : 'none', color: 'var(--text3)' }}
+                variant="ghost">Limpar seleção</Btn>
+            </div>
           </div>
 
           {/* Content */}
@@ -247,6 +275,8 @@ export default function AppPage({ user, onLogout, toast }) {
               </div>
             )}
           </div>
+          </>
+          )}
         </main>
       </div>
 
@@ -295,8 +325,13 @@ const s = {
   userName: { fontSize: 12, color: 'var(--text2)' },
   body:   { display: 'flex', flex: 1, overflow: 'hidden' },
   sidebar:{ width: 220, flexShrink: 0, borderRight: '0.5px solid var(--border)', background: 'var(--bg2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  tabs:   { display: 'flex', gap: 4 },
+  tab:    { padding: '5px 12px', border: 'none', cursor: 'pointer', fontSize: 12, borderRadius: 'var(--r)', transition: 'background .1s, color .1s' },
   main:   { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 },
-  toolbar:{ padding: '0.75rem 1.25rem', borderBottom: '0.5px solid var(--border)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, background: 'var(--bg2)' },
+  toolbar:{ padding: '0.75rem 1.25rem', borderBottom: '0.5px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, background: 'var(--bg2)' },
+  breadcrumb: { display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', fontSize: 12 },
+  bcBtn:  { background: 'none', border: 'none', color: 'var(--text2)', cursor: 'pointer', fontSize: 12, padding: '2px 4px', borderRadius: 4 },
+  bcSep:  { color: 'var(--text3)', fontSize: 12 },
   search: { flex: 1, padding: '7px 11px', background: 'var(--bg3)', border: '0.5px solid var(--border2)', borderRadius: 'var(--r)', color: 'var(--text)', fontSize: 13, outline: 'none' },
   content:{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' },
   queueItem: { background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 'var(--r)', padding: '7px 12px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 12 },

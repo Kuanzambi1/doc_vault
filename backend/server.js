@@ -6,6 +6,7 @@ const { initDB }       = require('./db')
 const authRoutes       = require('./routes/auth')
 const pastasRoutes     = require('./routes/pastas')
 const documentosRoutes = require('./routes/documentos')
+const usersRoutes       = require('./routes/utilizadores')
 
 const app  = express()
 const PORT = process.env.PORT || 3001
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/api/auth',       authRoutes)
 app.use('/api/pastas',     pastasRoutes)
 app.use('/api/documentos', documentosRoutes)
+app.use('/api/utilizadores', usersRoutes)
 app.get('/api/status', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 
 // Serve build React em produção

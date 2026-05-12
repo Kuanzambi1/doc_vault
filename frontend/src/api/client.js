@@ -99,3 +99,9 @@ export async function downloadZip(uuids) {
   a.href = url; a.download = 'documentos.zip'; a.click()
   URL.revokeObjectURL(url)
 }
+
+// ── Utilizadores ──────────────────────────────────────────
+export const getUtilizadores  = () => req('/utilizadores')
+export const criarUtilizador  = (dados) => req('/utilizadores', { method: 'POST', body: dados })
+export const atualizarUtilizador = (uuid, dados) => req(`/utilizadores/${uuid}`, { method: 'PATCH', body: dados })
+export const eliminarUtilizador = (uuid) => req(`/utilizadores/${uuid}`, { method: 'DELETE' })

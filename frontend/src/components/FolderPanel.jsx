@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import * as api from '../api/client.js'
 import Btn from './Btn.jsx'
 import Modal from './Modal.jsx'
@@ -10,7 +10,7 @@ import Modal from './Modal.jsx'
    Cada vez que paiUuid muda, faz fetch dos filhos diretos.
    O breadcrumb vem do backend já pronto.
 ─────────────────────────────────────────────────────────── */
-export default function FolderPanel({ onLocationChange, onToast }) {
+export default function FolderPanel({ onLocationChange, onToast, onBreadcrumbChange }) {
   const [paiUuid,    setPaiUuid]    = useState(null)   // null = raiz
   const [pastas,     setPastas]     = useState([])
   const [breadcrumb, setBreadcrumb] = useState([])
@@ -30,9 +30,6 @@ export default function FolderPanel({ onLocationChange, onToast }) {
   const [renameInput, setRenameInput] = useState('')
   const [renaming,   setRenaming]   = useState(false)
 
-  // Context menu
-  const [ctxMenu, setCtxMenu] = useState(null) // { x, y, pasta }
-
   const carregar = useCallback(async (uuid) => {
     setLoading(true)
     try {
@@ -51,13 +48,9 @@ export default function FolderPanel({ onLocationChange, onToast }) {
     onLocationChange(paiUuid)
   }, [paiUuid])
 
-  // Close context menu on outside click
   useEffect(() => {
-    if (!ctxMenu) return
-    const handler = () => setCtxMenu(null)
-    document.addEventListener('click', handler)
-    return () => document.removeEventListener('click', handler)
-  }, [ctxMenu])
+    if (onBreadcrumbChange) onBreadcrumbChange(breadcrumb)
+  }, [breadcrumb, onBreadcrumbChange])
 
   const navTo = (uuid) => setPaiUuid(uuid)
   const navUp = () => {
@@ -101,7 +94,6 @@ export default function FolderPanel({ onLocationChange, onToast }) {
   const abrirRenomear = (pasta) => {
     setRenameInput(pasta.nome)
     setToRename(pasta)
-    setCtxMenu(null)
   }
 
   const confirmarRenomear = async () => {
@@ -120,28 +112,8 @@ export default function FolderPanel({ onLocationChange, onToast }) {
     }
   }
 
-  // Context menu handlers
-  const openCtx = (e, pasta) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, pasta }) }
-  const closeCtx = () => setCtxMenu(null)
-
   return (
     <div style={s.wrap}>
-      {/* Breadcrumb */}
-      <div style={s.breadcrumb}>
-        <button style={s.bcBtn} onClick={() => setPaiUuid(null)}>
-          Início
-        </button>
-        {breadcrumb.map((b, i) => (
-          <React.Fragment key={b.uuid}>
-            <span style={s.bcSep}>›</span>
-            <button
-              style={{ ...s.bcBtn, color: i === breadcrumb.length - 1 ? 'var(--text)' : 'var(--text2)', fontWeight: i === breadcrumb.length - 1 ? 600 : 400 }}
-              onClick={() => navTo(b.uuid)}
-            >{b.nome}</button>
-          </React.Fragment>
-        ))}
-      </div>
-
       {/* Header */}
       <div style={s.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -169,20 +141,8 @@ export default function FolderPanel({ onLocationChange, onToast }) {
         )}
 
         {!loading && pastas.map(p => (
-          <FolderRow key={p.uuid} pasta={p} onOpen={navTo} onDelete={setToDelete} onRename={openCtx} />
+          <FolderRow key={p.uuid} pasta={p} onOpen={navTo} onDelete={setToDelete} onRenameRow={() => abrirRenomear(p)} />
         ))}
-
-        {/* Context menu */}
-        {ctxMenu && (
-          <div style={{ ...s.ctxMenu, top: ctxMenu.y, left: ctxMenu.x }}>
-            <button style={s.ctxItem} onClick={() => abrirRenomear(ctxMenu.pasta)}>
-              ✏️ &nbsp; Renomear
-            </button>
-            <button style={{ ...s.ctxItem, color: 'var(--danger)' }} onClick={() => { setToDelete(ctxMenu.pasta); setCtxMenu(null) }}>
-              🗑️ &nbsp; Eliminar
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Modal nova pasta */}
@@ -225,18 +185,51 @@ export default function FolderPanel({ onLocationChange, onToast }) {
           </Modal.Footer>
         </Modal>
       )}
+
+      {/* Modal renomear pasta */}
+      {toRename && (
+        <Modal title="Renomear pasta" onClose={() => setToRename(null)}>
+          <div style={{ padding: '1rem 1.25rem' }}>
+            <div style={s.formLabel}>Nome</div>
+            <input
+              autoFocus
+              value={renameInput}
+              onChange={e => setRenameInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && confirmarRenomear()}
+              style={s.input}
+            />
+          </div>
+          <Modal.Footer>
+            <Btn variant="ghost" onClick={() => setToRename(null)}>Cancelar</Btn>
+            <Btn variant="primary" onClick={confirmarRenomear} disabled={renaming || !renameInput.trim()}>
+              {renaming ? 'A renomear…' : 'Renomear'}
+            </Btn>
+          </Modal.Footer>
+        </Modal>
+      )}
     </div>
   )
 }
 
-function FolderRow({ pasta, onOpen, onDelete, onRename }) {
+function FolderRow({ pasta, onOpen, onDelete, onRenameRow }) {
   const [hov, setHov] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuOpen])
+
   return (
     <div
       style={{ ...s.folderRow, background: hov ? 'var(--bg3)' : 'transparent' }}
       onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      onContextMenu={e => onRename(e, pasta)}
+      onMouseLeave={() => { if (!menuOpen) setHov(false) }}
     >
       <button style={s.folderBtn} onClick={() => onOpen(pasta.uuid)}>
         <span style={{ fontSize: 14 }}>📁</span>
@@ -246,6 +239,23 @@ function FolderRow({ pasta, onOpen, onDelete, onRename }) {
           {pasta.total_subpastas > 0 && ` · ${pasta.total_subpastas} pasta${pasta.total_subpastas > 1 ? 's' : ''}`}
         </span>
       </button>
+      <button
+        style={{ ...s.menuBtn, opacity: hov || menuOpen ? 1 : 0 }}
+        onClick={(e) => { e.stopPropagation(); setMenuOpen(v => !v) }}
+        title="Opções"
+      >
+        ⋮
+      </button>
+      {menuOpen && (
+        <div ref={menuRef} style={s.ctxMenu}>
+          <button style={s.ctxItem} onClick={() => { setMenuOpen(false); onRenameRow() }}>
+            ✏️ Renomear
+          </button>
+          <button style={{ ...s.ctxItem, color: 'var(--danger)' }} onClick={() => { onDelete(pasta); setMenuOpen(false) }}>
+            🗑️ Eliminar
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -277,7 +287,7 @@ const s = {
   folderRow: {
     display: 'flex', alignItems: 'center',
     borderRadius: 'var(--r)', transition: 'background .1s',
-    marginBottom: 1,
+    marginBottom: 1, position: 'relative',
   },
   folderBtn: {
     flex: 1, display: 'flex', alignItems: 'center', gap: 7,
@@ -287,6 +297,23 @@ const s = {
   },
   folderName: { flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 },
   folderMeta: { fontSize: 11, color: 'var(--text3)', flexShrink: 0 },
+  menuBtn: {
+    width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer',
+    fontSize: 14, borderRadius: 4, transition: 'opacity .1s, background .1s',
+    flexShrink: 0, marginRight: 4,
+  },
+  ctxMenu: {
+    position: 'absolute', right: 8, top: '100%', zIndex: 100,
+    background: 'var(--bg2)', border: '0.5px solid var(--border)',
+    borderRadius: 'var(--r)', boxShadow: '0 4px 12px rgba(0,0,0,.3)',
+    minWidth: 120, overflow: 'hidden',
+  },
+  ctxItem: {
+    display: 'block', width: '100%', padding: '8px 12px',
+    background: 'none', border: 'none', color: 'var(--text)',
+    cursor: 'pointer', fontSize: 12, textAlign: 'left',
+  },
   delBtn: {
     padding: '3px 7px', background: 'none', border: 'none',
     color: 'var(--danger)', cursor: 'pointer', fontSize: 11,

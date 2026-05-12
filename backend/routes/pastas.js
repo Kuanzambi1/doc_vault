@@ -143,11 +143,18 @@ router.patch('/:uuid', async (req, res) => {
     if (!nome?.trim()) return res.status(400).json({ erro: 'Nome obrigatório' })
 
     const db = await getPool()
-    const [r] = await db.execute(
-      'UPDATE pastas SET nome = ? WHERE uuid = ? AND dono_id = ?',
-      [nome.trim(), req.params.uuid, req.user.id]
+    const [[pasta]] = await db.execute(
+      'SELECT id, dono_id FROM pastas WHERE uuid = ?',
+      [req.params.uuid]
     )
-    if (!r.affectedRows) return res.status(404).json({ erro: 'Pasta não encontrada' })
+    if (!pasta) return res.status(404).json({ erro: 'Pasta não encontrada' })
+
+    // Apenas o dono ou admin podem editar
+    if (pasta.dono_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ erro: 'Sem permissão para editar esta pasta' })
+    }
+
+    await db.execute('UPDATE pastas SET nome = ? WHERE uuid = ?', [nome.trim(), req.params.uuid])
     res.json({ mensagem: 'Renomeada', nome: nome.trim() })
   } catch (err) {
     res.status(500).json({ erro: err.message })
@@ -159,10 +166,15 @@ router.delete('/:uuid', async (req, res) => {
   try {
     const db = await getPool()
     const [[pasta]] = await db.execute(
-      'SELECT id, nome FROM pastas WHERE uuid = ? AND dono_id = ?',
-      [req.params.uuid, req.user.id]
+      'SELECT id, nome, dono_id FROM pastas WHERE uuid = ?',
+      [req.params.uuid]
     )
     if (!pasta) return res.status(404).json({ erro: 'Pasta não encontrada' })
+
+    // Apenas o dono ou admin podem eliminar
+    if (pasta.dono_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ erro: 'Sem permissão para eliminar esta pasta' })
+    }
 
     // Recolher todos os IDs descendentes (pastas filhas)
     const todosIds = await idsRecursivos(db, pasta.id)
@@ -209,16 +221,6 @@ router.delete('/:uuid', async (req, res) => {
     res.status(500).json({ erro: err.message })
   }
 })
-
-async function idsRecursivos(db, pastaId) {
-  const ids = []
-  const [filhos] = await db.execute('SELECT id FROM pastas WHERE pai_id = ?', [pastaId])
-  for (const f of filhos) {
-    ids.push(f.id)
-    ids.push(...await idsRecursivos(db, f.id))
-  }
-  return ids
-}
 
 async function idsRecursivos(db, pastaId) {
   const ids = [pastaId]
