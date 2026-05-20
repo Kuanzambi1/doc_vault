@@ -37,7 +37,7 @@ export default function LoginPage({ onAuth }) {
         <div style={s.leftContent}>
           <div style={s.logo}>
             <span style={s.logoIcon}>◈</span>
-            <span style={s.logoText}>DocVault</span>
+            <span style={s.logoText}>KapitalDocs</span>
           </div>
           <div style={s.tagline}>
             <div style={s.taglineTitle}>Os seus documentos,<br /><em style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', color: 'var(--accent)' }}>em segurança.</em></div>

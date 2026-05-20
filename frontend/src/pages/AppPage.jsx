@@ -153,7 +153,7 @@ export default function AppPage({ user, onLogout, toast }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={s.brand}>
             <span style={{ color: 'var(--accent)', fontSize: 18 }}>◈</span>
-            <span style={s.brandText}>DocVault</span>
+            <span style={s.brandText}>KapitalDocs</span>
           </div>
           {user.role === 'admin' && (
             <div style={s.tabs}>
