@@ -1,4 +1,4 @@
-const BASE = '/api'
+const BASE = 'https://docvault-production-637b.up.railway.app/api'
 
 function getToken() { return localStorage.getItem('dv_token') || '' }
 
