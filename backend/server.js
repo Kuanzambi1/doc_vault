@@ -38,7 +38,8 @@ async function start() {
     await initDB()
     app.listen(PORT, () => console.log(`🚀  http://localhost:${PORT}`))
   } catch (err) {
-    console.error('❌', err.message)
+    console.error('❌  Server failed to start:')
+    console.error(err.stack || err.message)
     process.exit(1)
   }
 }
