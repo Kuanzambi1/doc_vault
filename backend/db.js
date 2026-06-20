@@ -20,6 +20,19 @@ async function getPool() {
 async function initDB() {
   const db = await getPool()
 
+  // Verify the pool can actually reach the database before running DDL
+  try {
+    await db.query('SELECT 1')
+  } catch (err) {
+    console.error('❌  Failed to connect to MySQL:')
+    console.error(`    host     : ${process.env.DB_HOST || 'localhost'}`)
+    console.error(`    port     : ${parseInt(process.env.DB_PORT) || 3306}`)
+    console.error(`    user     : ${process.env.DB_USER || 'root'}`)
+    console.error(`    database : ${process.env.DB_NAME || 'docvault'}`)
+    console.error(`    error    : ${err.message}`)
+    throw err
+  }
+
   // Utilizadores
   await db.query(`
     CREATE TABLE IF NOT EXISTS utilizadores (
