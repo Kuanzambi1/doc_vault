@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Modal from './Modal.jsx'
 import Btn   from './Btn.jsx'
+import ChangePasswordModal from './ChangePasswordModal.jsx'
 import * as api from '../api/client.js'
 
 export default function UsersPanel({ user, onToast }) {
-  const [users,    setUsers]    = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [isAdmin,  setIsAdmin]  = useState(false)
-  const [modal,    setModal]    = useState(null)  // null | { mode: 'add' } | { mode: 'edit', user }
-  const [form,     setForm]     = useState({ nome: '', email: '', password: '', role: 'user' })
-  const [saving,   setSaving]   = useState(false)
-  const [deleting, setDeleting] = useState(null)
+  const [users,          setUsers]          = useState([])
+  const [loading,        setLoading]        = useState(true)
+  const [isAdmin,        setIsAdmin]        = useState(false)
+  const [modal,          setModal]          = useState(null)  // null | { mode: 'add' } | { mode: 'edit', user }
+  const [form,           setForm]           = useState({ nome: '', email: '', password: '', role: 'user' })
+  const [saving,         setSaving]         = useState(false)
+  const [deleting,       setDeleting]       = useState(null)
+  const [chgPwdUser,     setChgPwdUser]     = useState(null)  // user para mudar password
 
   const carregar = useCallback(async () => {
     setLoading(true)
@@ -98,7 +100,8 @@ export default function UsersPanel({ user, onToast }) {
                 {!u.ativo && <span style={{ ...s.badge, background: 'var(--danger-bg)', color: 'var(--danger)' }}>inativo</span>}
               </div>
               <div style={s.actions}>
-                <button style={s.actBtn} onClick={() => openEdit(u)}>✏️</button>
+                <button style={s.actBtn} title="Editar perfil" onClick={() => openEdit(u)}>✏️</button>
+                <button style={s.actBtn} title="Alterar password" onClick={() => setChgPwdUser(u)}>🔑</button>
                 {isAdmin && u.uuid !== user?.uuid && (
                   <button style={{ ...s.actBtn, color: 'var(--danger)' }} onClick={() => setDeleting(u)}>🗑️</button>
                 )}
@@ -121,23 +124,29 @@ export default function UsersPanel({ user, onToast }) {
               <input style={s.input} type="email" value={form.email} onChange={e => onChange('email', e.target.value)}
                 placeholder="email@exemplo.com" disabled={modal.mode === 'edit'} />
             </div>
-            <div>
-              <label style={s.label}>{modal.mode === 'add' ? 'Password' : 'Nova password (opcional)'}</label>
-              <input style={s.input} type="password" value={form.password} onChange={e => onChange('password', e.target.value)}
-                placeholder={modal.mode === 'add' ? 'Mínimo 6 caracteres' : 'Deixe vazio para não alterar'} />
-            </div>
-            <div>
-              <label style={s.label}>Tipo</label>
-              <select style={s.select} value={form.role} onChange={e => onChange('role', e.target.value)}>
-                <option value="user">Utilizador</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
-            {modal.mode === 'edit' && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.ativo} onChange={e => onChange('ativo', e.target.checked)} />
-                Ativo
-              </label>
+            {modal.mode === 'add' && (
+              <div>
+                <label style={s.label}>Password</label>
+                <input style={s.input} type="password" value={form.password} onChange={e => onChange('password', e.target.value)}
+                  placeholder="Mínimo 6 caracteres" />
+              </div>
+            )}
+            {isAdmin && (
+              <>
+                <div>
+                  <label style={s.label}>Tipo</label>
+                  <select style={s.select} value={form.role} onChange={e => onChange('role', e.target.value)}>
+                    <option value="user">Utilizador</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                {modal.mode === 'edit' && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.ativo} onChange={e => onChange('ativo', e.target.checked)} />
+                    Ativo
+                  </label>
+                )}
+              </>
             )}
           </div>
           <Modal.Footer>
@@ -165,6 +174,15 @@ export default function UsersPanel({ user, onToast }) {
             </Btn>
           </Modal.Footer>
         </Modal>
+      )}
+
+      {/* Modal: Alterar password (via botão 🔑 em qualquer linha) */}
+      {chgPwdUser && (
+        <ChangePasswordModal
+          user={chgPwdUser}
+          onClose={() => setChgPwdUser(null)}
+          onToast={onToast}
+        />
       )}
     </div>
   )

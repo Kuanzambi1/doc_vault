@@ -26,7 +26,7 @@ function ExtBadge({ ext = '' }) {
   )
 }
 
-function DocRow({ doc, selected, onSelect, onDelete, onMove }) {
+function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare }) {
   const [hov, setHov] = useState(false)
   return (
     <tr
@@ -40,8 +40,13 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove }) {
       </td>
       <td style={s.td}><ExtBadge ext={doc.extensao} /></td>
       <td style={{ ...s.td, maxWidth: 220 }}>
-        <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
-          title={doc.nome_original}>{doc.nome_original}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
+            title={doc.nome_original}>{doc.nome_original}</div>
+          {doc.token_partilha && (
+            <span title="Partilhado" style={{ fontSize: 10, flexShrink: 0 }}>🌐</span>
+          )}
+        </div>
         {doc.pasta_nome && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>📁 {doc.pasta_nome}</div>}
       </td>
       <td style={{ ...s.td, color: 'var(--text2)', fontSize: 12, whiteSpace: 'nowrap' }}>{fmt(doc.tamanho_bytes)}</td>
@@ -50,6 +55,7 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove }) {
         <div style={{ display: 'flex', gap: 4, opacity: hov ? 1 : 0, transition: 'opacity .12s' }}>
           <button style={{ ...s.act, color: 'var(--green)' }} onClick={() => downloadDoc(doc.uuid, doc.nome_original)}>↓ Baixar</button>
           <button style={s.act} onClick={() => onMove(doc)}>↗ Mover</button>
+          <button style={{ ...s.act, color: doc.token_partilha ? 'var(--accent)' : 'var(--text2)' }} onClick={() => onShare(doc)} title="Partilhar">🔗</button>
           <button style={{ ...s.act, color: 'var(--danger)' }} onClick={() => onDelete(doc)}>✕</button>
         </div>
       </td>
@@ -57,7 +63,7 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove }) {
   )
 }
 
-export default function DocTable({ docs, selecionados, loading, onSelect, onSelectAll, onDelete, onMove }) {
+export default function DocTable({ docs, selecionados, loading, onSelect, onSelectAll, onDelete, onMove, onShare }) {
   const allSel = docs.length > 0 && docs.every(d => selecionados.has(d.uuid))
 
   if (loading) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text3)' }}><span className="spin" style={{ width: 18, height: 18, border: '2px solid var(--border2)', borderTopColor: 'var(--accent)', borderRadius: '50%', display: 'inline-block' }} /></div>
@@ -77,7 +83,7 @@ export default function DocTable({ docs, selecionados, loading, onSelect, onSele
           </tr>
         </thead>
         <tbody>
-          {docs.map(d => <DocRow key={d.uuid} doc={d} selected={selecionados.has(d.uuid)} onSelect={onSelect} onDelete={onDelete} onMove={onMove} />)}
+          {docs.map(d => <DocRow key={d.uuid} doc={d} selected={selecionados.has(d.uuid)} onSelect={onSelect} onDelete={onDelete} onMove={onMove} onShare={onShare} />)}
         </tbody>
       </table>
     </div>

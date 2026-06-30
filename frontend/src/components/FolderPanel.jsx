@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import * as api from '../api/client.js'
 import Btn from './Btn.jsx'
 import Modal from './Modal.jsx'
+import ShareModal from './ShareModal.jsx'
 
 /* ── FolderPanel ──────────────────────────────────────────
    Este componente é a fonte da verdade para navegação de pastas.
@@ -26,9 +27,12 @@ export default function FolderPanel({ onLocationChange, onToast, onBreadcrumbCha
   const [deleting, setDeleting] = useState(false)
 
   // Modal renomear
-  const [toRename,   setToRename]   = useState(null)
+  const [toRename,    setToRename]   = useState(null)
   const [renameInput, setRenameInput] = useState('')
-  const [renaming,   setRenaming]   = useState(false)
+  const [renaming,    setRenaming]   = useState(false)
+
+  // Modal partilhar pasta
+  const [toShare, setToShare] = useState(null)
 
   const carregar = useCallback(async (uuid) => {
     setLoading(true)
@@ -141,7 +145,7 @@ export default function FolderPanel({ onLocationChange, onToast, onBreadcrumbCha
         )}
 
         {!loading && pastas.map(p => (
-          <FolderRow key={p.uuid} pasta={p} onOpen={navTo} onDelete={setToDelete} onRenameRow={() => abrirRenomear(p)} />
+          <FolderRow key={p.uuid} pasta={p} onOpen={navTo} onDelete={setToDelete} onRenameRow={() => abrirRenomear(p)} onShare={() => setToShare(p)} />
         ))}
       </div>
 
@@ -205,13 +209,24 @@ export default function FolderPanel({ onLocationChange, onToast, onBreadcrumbCha
               {renaming ? 'A renomear…' : 'Renomear'}
             </Btn>
           </Modal.Footer>
-        </Modal>
+          </Modal>
+      )}
+
+      {/* Modal partilhar pasta */}
+      {toShare && (
+        <ShareModal
+          item={toShare}
+          tipo="pasta"
+          onClose={() => setToShare(null)}
+          onToast={onToast}
+          onRefresh={() => carregar(paiUuid)}
+        />
       )}
     </div>
   )
 }
 
-function FolderRow({ pasta, onOpen, onDelete, onRenameRow }) {
+function FolderRow({ pasta, onOpen, onDelete, onRenameRow, onShare }) {
   const [hov, setHov] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -232,7 +247,7 @@ function FolderRow({ pasta, onOpen, onDelete, onRenameRow }) {
       onMouseLeave={() => { if (!menuOpen) setHov(false) }}
     >
       <button style={s.folderBtn} onClick={() => onOpen(pasta.uuid)}>
-        <span style={{ fontSize: 14 }}>📁</span>
+        <span style={{ fontSize: 14 }}>{pasta.token_partilha ? '🌐' : '📁'}</span>
         <span style={s.folderName}>{pasta.nome}</span>
         <span style={s.folderMeta}>
           {pasta.total_docs > 0 && `${pasta.total_docs} doc${pasta.total_docs > 1 ? 's' : ''}`}
@@ -250,6 +265,9 @@ function FolderRow({ pasta, onOpen, onDelete, onRenameRow }) {
         <div ref={menuRef} style={s.ctxMenu}>
           <button style={s.ctxItem} onClick={() => { setMenuOpen(false); onRenameRow() }}>
             ✏️ Renomear
+          </button>
+          <button style={s.ctxItem} onClick={() => { setMenuOpen(false); onShare() }}>
+            🔗 {pasta.token_partilha ? 'Gerir partilha' : 'Partilhar'}
           </button>
           <button style={{ ...s.ctxItem, color: 'var(--danger)' }} onClick={() => { onDelete(pasta); setMenuOpen(false) }}>
             🗑️ Eliminar

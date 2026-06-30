@@ -5,6 +5,8 @@ import DropZone    from '../components/DropZone.jsx'
 import Modal       from '../components/Modal.jsx'
 import Btn         from '../components/Btn.jsx'
 import UsersPanel  from '../components/UsersPanel.jsx'
+import ShareModal  from '../components/ShareModal.jsx'
+import ChangePasswordModal from '../components/ChangePasswordModal.jsx'
 import * as api    from '../api/client.js'
 
 export default function AppPage({ user, onLogout, toast }) {
@@ -27,10 +29,12 @@ export default function AppPage({ user, onLogout, toast }) {
   const uploading  = useRef(false)
 
   // Modais
-  const [modalDelDoc,  setModalDelDoc]  = useState(null)
-  const [modalMover,   setModalMover]   = useState(null)  // doc ou null (= usa selecionados)
-  const [todasPastas,  setTodasPastas]  = useState([])
-  const [destPasta,    setDestPasta]    = useState('')
+  const [modalDelDoc,     setModalDelDoc]     = useState(null)
+  const [modalMover,      setModalMover]      = useState(null)  // doc ou null (= usa selecionados)
+  const [todasPastas,     setTodasPastas]     = useState([])
+  const [destPasta,       setDestPasta]       = useState('')
+  const [modalPassword,   setModalPassword]   = useState(false)
+  const [modalPartilha,   setModalPartilha]   = useState(null)  // doc a partilhar
 
   const searchTimer = useRef()
 
@@ -164,6 +168,7 @@ export default function AppPage({ user, onLogout, toast }) {
         </div>
         <div style={s.topRight}>
           <span style={s.userName}>{user.nome}</span>
+          <Btn size="sm" variant="ghost" onClick={() => setModalPassword(true)} style={{ color: 'var(--text2)' }} title="Alterar password">🔑</Btn>
           <Btn size="sm" variant="ghost" onClick={onLogout} style={{ color: 'var(--text3)' }}>Sair</Btn>
         </div>
       </header>
@@ -263,6 +268,7 @@ export default function AppPage({ user, onLogout, toast }) {
                 onSelectAll={onSelectAll}
                 onDelete={setModalDelDoc}
                 onMove={abrirMover}
+                onShare={setModalPartilha}
               />
             </div>
 
@@ -279,6 +285,26 @@ export default function AppPage({ user, onLogout, toast }) {
           )}
         </main>
       </div>
+
+      {/* Modal: Alterar password */}
+      {modalPassword && (
+        <ChangePasswordModal
+          user={user}
+          onClose={() => setModalPassword(false)}
+          onToast={toast}
+        />
+      )}
+
+      {/* Modal: Partilhar documento */}
+      {modalPartilha && (
+        <ShareModal
+          item={modalPartilha}
+          tipo="documento"
+          onClose={() => setModalPartilha(null)}
+          onToast={toast}
+          onRefresh={() => carregarDocs(pagina, busca)}
+        />
+      )}
 
       {/* Modal: Eliminar doc */}
       {modalDelDoc && (

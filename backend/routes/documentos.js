@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
     const [[{ total }]] = await db.execute(`SELECT COUNT(*) AS total FROM documentos d ${cond}`, params)
     const [rows] = await db.execute(
       `SELECT d.id, d.uuid, d.nome_original, d.tipo_mime, d.tamanho_bytes,
-              d.extensao, d.criado_em, d.pasta_id,
+              d.extensao, d.criado_em, d.pasta_id, d.token_partilha,
               p.nome AS pasta_nome, p.uuid AS pasta_uuid
        FROM documentos d LEFT JOIN pastas p ON p.id = d.pasta_id
        ${cond} ORDER BY d.criado_em DESC LIMIT ? OFFSET ?`,
@@ -213,6 +213,35 @@ router.post('/eliminar-lote', async (req, res) => {
   } catch (err) {
     res.status(500).json({ erro: err.message })
   }
+})
+
+/* Gerar link de partilha */
+router.post('/:uuid/partilhar', async (req, res) => {
+  try {
+    const db = await getPool()
+    const [[doc]] = await db.execute(
+      'SELECT id, token_partilha FROM documentos WHERE uuid = ? AND dono_id = ?',
+      [req.params.uuid, req.user.id]
+    )
+    if (!doc) return res.status(404).json({ erro: 'Documento não encontrado' })
+    if (doc.token_partilha) return res.json({ token: doc.token_partilha })
+    const token = uuidv4()
+    await db.execute('UPDATE documentos SET token_partilha = ? WHERE uuid = ?', [token, req.params.uuid])
+    res.json({ token })
+  } catch (err) { res.status(500).json({ erro: err.message }) }
+})
+
+/* Revogar link de partilha */
+router.delete('/:uuid/partilhar', async (req, res) => {
+  try {
+    const db = await getPool()
+    const [r] = await db.execute(
+      'UPDATE documentos SET token_partilha = NULL WHERE uuid = ? AND dono_id = ?',
+      [req.params.uuid, req.user.id]
+    )
+    if (!r.affectedRows) return res.status(404).json({ erro: 'Documento não encontrado' })
+    res.json({ mensagem: 'Partilha revogada' })
+  } catch (err) { res.status(500).json({ erro: err.message }) }
 })
 
 module.exports = router

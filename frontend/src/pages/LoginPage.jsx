@@ -86,10 +86,10 @@ export default function LoginPage({ onAuth }) {
 
           <div style={s.switchRow}>
             <span style={{ color: 'var(--text2)' }}>
-              {modo === 'login' ? 'Não tem conta?' : 'Já tem conta?'}
+              {/*modo === 'login' ? 'Não tem conta?' : 'Já tem conta?'*/}
             </span>
             <button style={s.switchBtn} onClick={() => { setModo(modo === 'login' ? 'registar' : 'login'); setErro('') }}>
-              {modo === 'login' ? 'Registar' : 'Entrar'}
+              {/*modo === 'login' ? 'Registar' : 'Entrar'*/}
             </button>
           </div>
         </div>

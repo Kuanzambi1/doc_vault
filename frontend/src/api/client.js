@@ -1,4 +1,4 @@
-const BASE = 'https://docvault-production-637b.up.railway.app/api'
+const BASE = import.meta.env.VITE_API_BASE ?? 'https://docback.kapital360.ao/api'
 
 function getToken() { return localStorage.getItem('dv_token') || '' }
 
@@ -13,6 +13,13 @@ async function req(url, opts = {}) {
     body: opts.body instanceof FormData ? opts.body :
           opts.body ? JSON.stringify(opts.body) : undefined,
   })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.erro || `Erro ${res.status}`)
+  return data
+}
+
+async function reqPublic(url) {
+  const res = await fetch(BASE + url)
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.erro || `Erro ${res.status}`)
   return data
@@ -100,8 +107,16 @@ export async function downloadZip(uuids) {
   URL.revokeObjectURL(url)
 }
 
-// ── Utilizadores ──────────────────────────────────────────
+// ── Utilizadores ────────────────────────────────────────────────
 export const getUtilizadores  = () => req('/utilizadores')
 export const criarUtilizador  = (dados) => req('/utilizadores', { method: 'POST', body: dados })
 export const atualizarUtilizador = (uuid, dados) => req(`/utilizadores/${uuid}`, { method: 'PATCH', body: dados })
 export const eliminarUtilizador = (uuid) => req(`/utilizadores/${uuid}`, { method: 'DELETE' })
+
+// ── Partilha pública ────────────────────────────────────────────
+export const partilharDoc        = (uuid) => req(`/documentos/${uuid}/partilhar`, { method: 'POST' })
+export const revogarPartilhaDoc  = (uuid) => req(`/documentos/${uuid}/partilhar`, { method: 'DELETE' })
+export const partilharPasta      = (uuid) => req(`/pastas/${uuid}/partilhar`,     { method: 'POST' })
+export const revogarPartilhaPasta= (uuid) => req(`/pastas/${uuid}/partilhar`,     { method: 'DELETE' })
+export const getPartilha         = (token) => reqPublic(`/partilha/${token}`)
+export const BASE_URL            = BASE

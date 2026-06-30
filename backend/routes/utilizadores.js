@@ -3,6 +3,9 @@ const bcrypt   = require('bcryptjs')
 const { v4: uuidv4 } = require('uuid')
 const { getPool }    = require('../db')
 const authMiddleware = require('../middleware/auth')
+const path = require('path')
+const fs = require('fs')
+const { UPLOAD_DIR } = require('../uploadMiddleware')
 
 const router = express.Router()
 
@@ -114,6 +117,17 @@ router.delete('/:uuid', authMiddleware, onlyAdmin, async (req, res, next) => {
     const [[user]] = await db.execute('SELECT id, nome FROM utilizadores WHERE uuid = ?', [req.params.uuid])
     if (!user) return res.status(404).json({ erro: 'Utilizador não encontrado' })
     if (user.id === req.user.id) return res.status(400).json({ erro: 'Não podes eliminar-te a ti mesmo' })
+
+    // Remover ficheiros físicos
+    const [docs] = await db.execute('SELECT nome_arquivo FROM documentos WHERE dono_id = ?', [user.id])
+    for (const doc of docs) {
+      const fp = path.resolve(UPLOAD_DIR, doc.nome_arquivo)
+      if (fs.existsSync(fp)) fs.unlinkSync(fp)
+    }
+
+    // Remover registos da base de dados (cascade manual)
+    await db.execute('DELETE FROM documentos WHERE dono_id = ?', [user.id])
+    await db.execute('DELETE FROM pastas WHERE dono_id = ?', [user.id])
 
     await db.execute('DELETE FROM utilizadores WHERE uuid = ?', [req.params.uuid])
     res.json({ mensagem: `Utilizador "${user.nome}" eliminado` })

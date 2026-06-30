@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import LoginPage from './pages/LoginPage.jsx'
 import AppPage   from './pages/AppPage.jsx'
+import SharePage from './pages/SharePage.jsx'
 import Toast     from './components/Toast.jsx'
 import { useToast } from './hooks/useToast.js'
 import { getMe } from './api/client.js'
 
 export default function App() {
-  const [user,    setUser]    = useState(undefined) // undefined = verificando, null = não autenticado
+  // Detetar rota pública de partilha /s/:token (sem autenticação)
+  const shareMatch = window.location.pathname.match(/^\/s\/([^/]+)/)
+  if (shareMatch) return <SharePage token={shareMatch[1]} />
+
+  const [user,    setUser]    = useState(undefined)
   const [loading, setLoading] = useState(true)
   const { toasts, toast } = useToast()
 

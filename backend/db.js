@@ -66,6 +66,10 @@ async function initDB() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `)
 
+  // Colunas de partilha (adicionar se não existirem)
+  try { await db.query(`ALTER TABLE documentos ADD COLUMN token_partilha VARCHAR(36) NULL DEFAULT NULL`) } catch(_){}
+  try { await db.query(`ALTER TABLE pastas     ADD COLUMN token_partilha VARCHAR(36) NULL DEFAULT NULL`) } catch(_){}
+
   console.log('✅  Base de dados pronta')
 }
 

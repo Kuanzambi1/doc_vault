@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
 
     // Buscar filhos diretos
     const [pastas] = await db.execute(
-      `SELECT p.id, p.uuid, p.nome, p.pai_id, p.criado_em,
+      `SELECT p.id, p.uuid, p.nome, p.pai_id, p.criado_em, p.token_partilha,
               COUNT(d.id) AS total_docs,
               COUNT(sp.id) AS total_subpastas
        FROM pastas p
@@ -228,5 +228,39 @@ async function idsRecursivos(db, pastaId) {
   for (const f of filhos) ids.push(...await idsRecursivos(db, f.id))
   return ids
 }
+
+/* POST /api/pastas/:uuid/partilhar — gerar link */
+router.post('/:uuid/partilhar', async (req, res) => {
+  try {
+    const db = await getPool()
+    const [[pasta]] = await db.execute(
+      'SELECT id, token_partilha, dono_id FROM pastas WHERE uuid = ?',
+      [req.params.uuid]
+    )
+    if (!pasta) return res.status(404).json({ erro: 'Pasta não encontrada' })
+    if (pasta.dono_id !== req.user.id && req.user.role !== 'admin')
+      return res.status(403).json({ erro: 'Sem permissão' })
+    if (pasta.token_partilha) return res.json({ token: pasta.token_partilha })
+    const token = uuidv4()
+    await db.execute('UPDATE pastas SET token_partilha = ? WHERE uuid = ?', [token, req.params.uuid])
+    res.json({ token })
+  } catch (err) { res.status(500).json({ erro: err.message }) }
+})
+
+/* DELETE /api/pastas/:uuid/partilhar — revogar */
+router.delete('/:uuid/partilhar', async (req, res) => {
+  try {
+    const db = await getPool()
+    const [[pasta]] = await db.execute(
+      'SELECT id, dono_id FROM pastas WHERE uuid = ?',
+      [req.params.uuid]
+    )
+    if (!pasta) return res.status(404).json({ erro: 'Pasta não encontrada' })
+    if (pasta.dono_id !== req.user.id && req.user.role !== 'admin')
+      return res.status(403).json({ erro: 'Sem permissão' })
+    await db.execute('UPDATE pastas SET token_partilha = NULL WHERE uuid = ?', [req.params.uuid])
+    res.json({ mensagem: 'Partilha revogada' })
+  } catch (err) { res.status(500).json({ erro: err.message }) }
+})
 
 module.exports = router
