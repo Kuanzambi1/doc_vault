@@ -11,7 +11,7 @@ const EXPIRES = () => process.env.JWT_EXPIRES_IN || '8h'
 
 function makeToken(user) {
   return jwt.sign(
-    { id: user.id, uuid: user.uuid, nome: user.nome, email: user.email, role: user.role },
+    { id: user.id, uuid: user.uuid, nome: user.nome, email: user.email, role: user.role, departamento_ids: user.departamento_ids, is_boss: user.is_boss },
     SECRET(),
     { expiresIn: EXPIRES() }
   )
@@ -58,7 +58,11 @@ router.post('/login', async (req, res) => {
 
     const db = await getPool()
     const [[user]] = await db.execute(
-      'SELECT id, uuid, nome, email, password_hash, role, ativo FROM utilizadores WHERE email = ?',
+      `SELECT u.id, u.uuid, u.nome, u.email, u.password_hash, u.role, u.ativo, 
+              (SELECT GROUP_CONCAT(departamento_id) FROM utilizador_departamentos WHERE utilizador_id = u.id) AS departamento_ids,
+              (SELECT GROUP_CONCAT(d.nome) FROM utilizador_departamentos ud JOIN departamentos d ON d.id = ud.departamento_id WHERE ud.utilizador_id = u.id) AS departamento_nomes
+       FROM utilizadores u
+       WHERE u.email = ?`,
       [email.toLowerCase().trim()]
     )
 
@@ -68,7 +72,10 @@ router.post('/login', async (req, res) => {
     const ok = await bcrypt.compare(password, user.password_hash)
     if (!ok) return res.status(401).json({ erro: 'Credenciais inválidas' })
 
-    const { password_hash, ativo, ...safe } = user
+    const { password_hash, ativo, departamento_ids, departamento_nomes, ...safe } = user
+    safe.departamento_ids = departamento_ids ? departamento_ids.split(',').map(Number) : []
+    const nomesArray = departamento_nomes ? departamento_nomes.split(',') : []
+    safe.is_boss = nomesArray.includes('Geral')
     res.json({ utilizador: safe, token: makeToken(safe) })
   } catch (err) {
     res.status(500).json({ erro: err.message })
@@ -80,10 +87,19 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const db = await getPool()
     const [[user]] = await db.execute(
-      'SELECT id, uuid, nome, email, role, criado_em FROM utilizadores WHERE id = ?',
+      `SELECT u.id, u.uuid, u.nome, u.email, u.role, u.criado_em, 
+              (SELECT GROUP_CONCAT(departamento_id) FROM utilizador_departamentos WHERE utilizador_id = u.id) AS departamento_ids,
+              (SELECT GROUP_CONCAT(d.nome) FROM utilizador_departamentos ud JOIN departamentos d ON d.id = ud.departamento_id WHERE ud.utilizador_id = u.id) AS departamento_nomes
+       FROM utilizadores u
+       WHERE u.id = ?`,
       [req.user.id]
     )
     if (!user) return res.status(404).json({ erro: 'Utilizador não encontrado' })
+    
+    user.departamento_ids = user.departamento_ids ? user.departamento_ids.split(',').map(Number) : []
+    const nomesArray = user.departamento_nomes ? user.departamento_nomes.split(',') : []
+    user.is_boss = nomesArray.includes('Geral')
+    delete user.departamento_nomes
     res.json(user)
   } catch (err) {
     res.status(500).json({ erro: err.message })

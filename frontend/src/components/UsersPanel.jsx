@@ -6,10 +6,11 @@ import * as api from '../api/client.js'
 
 export default function UsersPanel({ user, onToast }) {
   const [users,          setUsers]          = useState([])
+  const [deps,           setDeps]           = useState([])
   const [loading,        setLoading]        = useState(true)
   const [isAdmin,        setIsAdmin]        = useState(false)
   const [modal,          setModal]          = useState(null)  // null | { mode: 'add' } | { mode: 'edit', user }
-  const [form,           setForm]           = useState({ nome: '', email: '', password: '', role: 'user' })
+  const [form,           setForm]           = useState({ nome: '', email: '', password: '', role: 'user', departamentos: [] })
   const [saving,         setSaving]         = useState(false)
   const [deleting,       setDeleting]       = useState(null)
   const [chgPwdUser,     setChgPwdUser]     = useState(null)  // user para mudar password
@@ -17,8 +18,12 @@ export default function UsersPanel({ user, onToast }) {
   const carregar = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await api.getUtilizadores()
+      const [data, depsData] = await Promise.all([
+        api.getUtilizadores(),
+        api.getDepartamentos()
+      ])
       setUsers(Array.isArray(data) ? data : [data])
+      setDeps(Array.isArray(depsData) ? depsData : [])
     } catch (e) { onToast(e.message, 'error') }
     finally { setLoading(false) }
   }, [onToast])
@@ -27,16 +32,25 @@ export default function UsersPanel({ user, onToast }) {
   useEffect(() => { setIsAdmin(user?.role === 'admin') }, [user])
 
   const openAdd = () => {
-    setForm({ nome: '', email: '', password: '', role: 'user' })
+    setForm({ nome: '', email: '', password: '', role: 'user', departamentos: [] })
     setModal({ mode: 'add' })
   }
 
   const openEdit = (user) => {
-    setForm({ nome: user.nome, email: user.email, password: '', role: user.role, ativo: user.ativo })
+    setForm({ nome: user.nome, email: user.email, password: '', role: user.role, ativo: user.ativo, departamentos: user.departamentos || [] })
     setModal({ mode: 'edit', user })
   }
 
   const onChange = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  
+  const toggleDep = (id) => {
+    setForm(f => {
+      const deps = f.departamentos.includes(id)
+        ? f.departamentos.filter(d => d !== id)
+        : [...f.departamentos, id]
+      return { ...f, departamentos: deps }
+    })
+  }
 
   const onSubmit = async () => {
     if (!form.nome.trim() || !form.email.trim()) {
@@ -48,13 +62,15 @@ export default function UsersPanel({ user, onToast }) {
     setSaving(true)
     try {
       if (modal.mode === 'add') {
-        await api.criarUtilizador(form)
+        const payload = { ...form }
+        await api.criarUtilizador(payload)
         onToast('Utilizador criado', 'success')
       } else {
         const payload = { nome: form.nome }
         if (form.password) payload.password = form.password
         if (form.role)     payload.role     = form.role
         if (form.ativo !== undefined) payload.ativo = form.ativo
+        if (form.departamentos !== undefined) payload.departamentos = form.departamentos
         await api.atualizarUtilizador(modal.user.uuid, payload)
         onToast('Utilizador atualizado', 'success')
       }
@@ -91,7 +107,7 @@ export default function UsersPanel({ user, onToast }) {
             <div key={u.uuid} style={s.row}>
               <div style={s.info}>
                 <div style={s.name}>{u.nome}</div>
-                <div style={s.email}>{u.email}</div>
+                <div style={s.email}>{u.email} {u.departamento_nome ? `• ${u.departamento_nome}` : ''}</div>
               </div>
               <div style={s.meta}>
                 <span style={{ ...s.badge, background: u.role === 'admin' ? 'var(--accent-bg)' : 'var(--bg3)', color: u.role === 'admin' ? 'var(--accent)' : 'var(--text3)' }}>
@@ -139,6 +155,18 @@ export default function UsersPanel({ user, onToast }) {
                     <option value="user">Utilizador</option>
                     <option value="admin">Administrador</option>
                   </select>
+                </div>
+                <div>
+                  <label style={s.label}>Departamentos</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 150, overflowY: 'auto', background: 'var(--bg)', padding: '8px 10px', border: '0.5px solid var(--border2)', borderRadius: 'var(--r)' }}>
+                    {deps.map(d => (
+                      <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text)', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={form.departamentos.includes(d.id)} onChange={() => toggleDep(d.id)} />
+                        {d.nome}
+                      </label>
+                    ))}
+                    {deps.length === 0 && <span style={{fontSize: 12, color: 'var(--text3)'}}>Nenhum departamento criado.</span>}
+                  </div>
                 </div>
                 {modal.mode === 'edit' && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>

@@ -44,7 +44,10 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare }) {
           <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
             title={doc.nome_original}>{doc.nome_original}</div>
           {doc.token_partilha && (
-            <span title="Partilhado" style={{ fontSize: 10, flexShrink: 0 }}>🌐</span>
+            <span title="Partilhado (Link)" style={{ fontSize: 10, flexShrink: 0 }}>🌐</span>
+          )}
+          {doc.departamentos_partilhados?.length > 0 && (
+            <span title="Partilhado (Departamentos)" style={{ fontSize: 10, flexShrink: 0 }}>👥</span>
           )}
         </div>
         {doc.pasta_nome && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>📁 {doc.pasta_nome}</div>}
@@ -55,7 +58,7 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare }) {
         <div style={{ display: 'flex', gap: 4, opacity: hov ? 1 : 0, transition: 'opacity .12s' }}>
           <button style={{ ...s.act, color: 'var(--green)' }} onClick={() => downloadDoc(doc.uuid, doc.nome_original)}>↓ Baixar</button>
           <button style={s.act} onClick={() => onMove(doc)}>↗ Mover</button>
-          <button style={{ ...s.act, color: doc.token_partilha ? 'var(--accent)' : 'var(--text2)' }} onClick={() => onShare(doc)} title="Partilhar">🔗</button>
+          <button style={{ ...s.act, color: (doc.token_partilha || doc.departamentos_partilhados?.length) ? 'var(--accent)' : 'var(--text2)' }} onClick={() => onShare(doc)} title="Partilhar">🔗</button>
           <button style={{ ...s.act, color: 'var(--danger)' }} onClick={() => onDelete(doc)}>✕</button>
         </div>
       </td>

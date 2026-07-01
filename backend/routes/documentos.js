@@ -53,8 +53,19 @@ router.get('/', async (req, res) => {
     const pastaUuid = req.query.pasta_uuid || null
     const offset = (pagina - 1) * limite
 
-    const where = ['d.dono_id = ?']
-    const params = [req.user.id]
+    const where = []
+    const params = []
+
+    if (req.user.role !== 'admin' && !req.user.is_boss) {
+      if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+        const ph = req.user.departamento_ids.map(() => '?').join(',')
+        where.push(`(d.dono_id = ? OR d.id IN (SELECT documento_id FROM documento_departamentos WHERE departamento_id IN (${ph})) OR d.pasta_id IN (SELECT pasta_id FROM pasta_departamentos WHERE departamento_id IN (${ph})))`)
+        params.push(req.user.id, ...req.user.departamento_ids, ...req.user.departamento_ids)
+      } else {
+        where.push('d.dono_id = ?')
+        params.push(req.user.id)
+      }
+    }
 
     if (pastaUuid === 'raiz') {
       where.push('d.pasta_id IS NULL')
@@ -64,12 +75,13 @@ router.get('/', async (req, res) => {
     }
     if (busca) { where.push('d.nome_original LIKE ?'); params.push(busca) }
 
-    const cond = 'WHERE ' + where.join(' AND ')
+    const cond = where.length > 0 ? 'WHERE ' + where.join(' AND ') : ''
     const [[{ total }]] = await db.execute(`SELECT COUNT(*) AS total FROM documentos d ${cond}`, params)
     const [rows] = await db.execute(
       `SELECT d.id, d.uuid, d.nome_original, d.tipo_mime, d.tamanho_bytes,
               d.extensao, d.criado_em, d.pasta_id, d.token_partilha,
-              p.nome AS pasta_nome, p.uuid AS pasta_uuid
+              p.nome AS pasta_nome, p.uuid AS pasta_uuid,
+              (SELECT GROUP_CONCAT(departamento_id) FROM documento_departamentos WHERE documento_id = d.id) AS departamentos_partilhados
        FROM documentos d LEFT JOIN pastas p ON p.id = d.pasta_id
        ${cond} ORDER BY d.criado_em DESC LIMIT ? OFFSET ?`,
       [...params, limite, offset]
@@ -84,9 +96,22 @@ router.get('/', async (req, res) => {
 router.get('/:uuid/download', async (req, res) => {
   try {
     const db = await getPool()
+    let accessWhere = ''
+    let accessParams = []
+    if (req.user.role !== 'admin' && !req.user.is_boss) {
+      if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+        const ph = req.user.departamento_ids.map(() => '?').join(',')
+        accessWhere = ` AND (dono_id = ? OR id IN (SELECT documento_id FROM documento_departamentos WHERE departamento_id IN (${ph})) OR pasta_id IN (SELECT pasta_id FROM pasta_departamentos WHERE departamento_id IN (${ph})))`
+        accessParams = [req.user.id, ...req.user.departamento_ids, ...req.user.departamento_ids]
+      } else {
+        accessWhere = ' AND dono_id = ?'
+        accessParams = [req.user.id]
+      }
+    }
+
     const [[doc]] = await db.execute(
-      'SELECT * FROM documentos WHERE uuid = ? AND dono_id = ?', 
-      [req.params.uuid, req.user.id]
+      `SELECT * FROM documentos WHERE uuid = ? ${accessWhere}`, 
+      [req.params.uuid, ...accessParams]
     )
     if (!doc) return res.status(404).json({ erro: 'Não encontrado' })
     
@@ -136,9 +161,22 @@ router.post('/download-zip', async (req, res) => {
     if (!uuids?.length) return res.status(400).json({ erro: 'Sem UUIDs' })
     const db = await getPool()
     const ph = uuids.map(() => '?').join(',')
+    let accessWhere = ''
+    let accessParams = []
+    if (req.user.role !== 'admin' && !req.user.is_boss) {
+      if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+        const phDep = req.user.departamento_ids.map(() => '?').join(',')
+        accessWhere = ` AND (dono_id = ? OR id IN (SELECT documento_id FROM documento_departamentos WHERE departamento_id IN (${phDep})) OR pasta_id IN (SELECT pasta_id FROM pasta_departamentos WHERE departamento_id IN (${phDep})))`
+        accessParams = [req.user.id, ...req.user.departamento_ids, ...req.user.departamento_ids]
+      } else {
+        accessWhere = ' AND dono_id = ?'
+        accessParams = [req.user.id]
+      }
+    }
+
     const [docs] = await db.execute(
-      `SELECT nome_original, nome_arquivo FROM documentos WHERE uuid IN (${ph}) AND dono_id = ?`,
-      [...uuids, req.user.id]
+      `SELECT nome_original, nome_arquivo FROM documentos WHERE uuid IN (${ph}) ${accessWhere}`,
+      [...uuids, ...accessParams]
     )
     res.setHeader('Content-Type', 'application/zip')
     res.setHeader('Content-Disposition', 'attachment; filename="documentos.zip"')
@@ -161,13 +199,17 @@ router.patch('/:uuid/mover', async (req, res) => {
     const { pasta_uuid } = req.body
     let pastaId = null
     if (pasta_uuid) {
-      const [[p]] = await db.execute('SELECT id FROM pastas WHERE uuid = ? AND dono_id = ?', [pasta_uuid, req.user.id])
+      const [[p]] = await db.execute('SELECT id FROM pastas WHERE uuid = ?', [pasta_uuid])
       if (!p) return res.status(404).json({ erro: 'Pasta não encontrada' })
       pastaId = p.id
     }
+    const [[doc]] = await db.execute('SELECT id, dono_id FROM documentos WHERE uuid = ?', [req.params.uuid])
+    if (!doc) return res.status(404).json({ erro: 'Documento não encontrado' })
+    if (doc.dono_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ erro: 'Sem permissão' })
+
     const [r] = await db.execute(
-      'UPDATE documentos SET pasta_id = ? WHERE uuid = ? AND dono_id = ?',
-      [pastaId, req.params.uuid, req.user.id]
+      'UPDATE documentos SET pasta_id = ? WHERE id = ?',
+      [pastaId, doc.id]
     )
     if (!r.affectedRows) return res.status(404).json({ erro: 'Documento não encontrado' })
     res.json({ mensagem: 'Movido' })
@@ -181,9 +223,10 @@ router.delete('/:uuid', async (req, res) => {
   try {
     const db = await getPool()
     const [[doc]] = await db.execute(
-      'SELECT * FROM documentos WHERE uuid = ? AND dono_id = ?', [req.params.uuid, req.user.id]
+      'SELECT * FROM documentos WHERE uuid = ?', [req.params.uuid]
     )
     if (!doc) return res.status(404).json({ erro: 'Não encontrado' })
+    if (doc.dono_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ erro: 'Sem permissão' })
     const p = path.resolve(UPLOAD_DIR, doc.nome_arquivo)
     if (fs.existsSync(p)) fs.unlink(p, () => {})
     await db.execute('DELETE FROM documentos WHERE uuid = ?', [req.params.uuid])
@@ -200,15 +243,23 @@ router.post('/eliminar-lote', async (req, res) => {
     if (!uuids?.length) return res.status(400).json({ erro: 'Sem UUIDs' })
     const db = await getPool()
     const ph = uuids.map(() => '?').join(',')
+    let whereClause = `uuid IN (${ph}) AND dono_id = ?`
+    let queryParams = [...uuids, req.user.id]
+    
+    if (req.user.role === 'admin') {
+      whereClause = `uuid IN (${ph})`
+      queryParams = [...uuids]
+    }
+
     const [docs] = await db.execute(
-      `SELECT nome_arquivo FROM documentos WHERE uuid IN (${ph}) AND dono_id = ?`,
-      [...uuids, req.user.id]
+      `SELECT nome_arquivo FROM documentos WHERE ${whereClause}`,
+      queryParams
     )
     docs.forEach(d => {
       const p = path.resolve(UPLOAD_DIR, d.nome_arquivo)
       if (fs.existsSync(p)) fs.unlink(p, () => {})
     })
-    await db.execute(`DELETE FROM documentos WHERE uuid IN (${ph}) AND dono_id = ?`, [...uuids, req.user.id])
+    await db.execute(`DELETE FROM documentos WHERE ${whereClause}`, queryParams)
     res.json({ mensagem: `${docs.length} documento(s) eliminado(s)` })
   } catch (err) {
     res.status(500).json({ erro: err.message })
@@ -220,10 +271,11 @@ router.post('/:uuid/partilhar', async (req, res) => {
   try {
     const db = await getPool()
     const [[doc]] = await db.execute(
-      'SELECT id, token_partilha FROM documentos WHERE uuid = ? AND dono_id = ?',
-      [req.params.uuid, req.user.id]
+      'SELECT id, token_partilha, dono_id FROM documentos WHERE uuid = ?',
+      [req.params.uuid]
     )
     if (!doc) return res.status(404).json({ erro: 'Documento não encontrado' })
+    if (doc.dono_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ erro: 'Sem permissão' })
     if (doc.token_partilha) return res.json({ token: doc.token_partilha })
     const token = uuidv4()
     await db.execute('UPDATE documentos SET token_partilha = ? WHERE uuid = ?', [token, req.params.uuid])
@@ -235,12 +287,52 @@ router.post('/:uuid/partilhar', async (req, res) => {
 router.delete('/:uuid/partilhar', async (req, res) => {
   try {
     const db = await getPool()
+    const [[doc]] = await db.execute(
+      'SELECT id, dono_id FROM documentos WHERE uuid = ?',
+      [req.params.uuid]
+    )
+    if (!doc) return res.status(404).json({ erro: 'Documento não encontrado' })
+    if (doc.dono_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ erro: 'Sem permissão' })
+
     const [r] = await db.execute(
-      'UPDATE documentos SET token_partilha = NULL WHERE uuid = ? AND dono_id = ?',
-      [req.params.uuid, req.user.id]
+      'UPDATE documentos SET token_partilha = NULL WHERE id = ?',
+      [doc.id]
     )
     if (!r.affectedRows) return res.status(404).json({ erro: 'Documento não encontrado' })
     res.json({ mensagem: 'Partilha revogada' })
+  } catch (err) { res.status(500).json({ erro: err.message }) }
+})
+
+/* Partilha com Departamentos */
+router.get('/:uuid/departamentos', async (req, res) => {
+  try {
+    const db = await getPool()
+    const [[doc]] = await db.execute('SELECT id, dono_id FROM documentos WHERE uuid = ?', [req.params.uuid])
+    if (!doc) return res.status(404).json({ erro: 'Documento não encontrado' })
+
+    const [deps] = await db.execute('SELECT departamento_id FROM documento_departamentos WHERE documento_id = ?', [doc.id])
+    res.json(deps.map(d => d.departamento_id))
+  } catch (err) { res.status(500).json({ erro: err.message }) }
+})
+
+router.post('/:uuid/departamentos', async (req, res) => {
+  try {
+    const db = await getPool()
+    const { departamento_ids } = req.body
+    const [[doc]] = await db.execute('SELECT id, dono_id FROM documentos WHERE uuid = ?', [req.params.uuid])
+    if (!doc) return res.status(404).json({ erro: 'Documento não encontrado' })
+
+    if (doc.dono_id !== req.user.id && req.user.role !== 'admin')
+      return res.status(403).json({ erro: 'Sem permissão' })
+
+    await db.execute('DELETE FROM documento_departamentos WHERE documento_id = ?', [doc.id])
+    
+    if (departamento_ids && departamento_ids.length > 0) {
+      const vals = departamento_ids.map(id => [doc.id, id])
+      await db.query('INSERT INTO documento_departamentos (documento_id, departamento_id) VALUES ?', [vals])
+    }
+    
+    res.json({ mensagem: 'Partilha atualizada' })
   } catch (err) { res.status(500).json({ erro: err.message }) }
 })
 

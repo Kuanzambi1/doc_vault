@@ -34,19 +34,36 @@ router.get('/', async (req, res) => {
       paiInfo = pai
     }
 
+    // Lógica de acesso (admin vê tudo, outros veem próprio + partilhados com dep)
+    let accessWhere = ''
+    let accessParams = []
+    if (req.user.role !== 'admin' && !req.user.is_boss) {
+      if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+        const ph = req.user.departamento_ids.map(() => '?').join(',')
+        accessWhere = ` AND (p.dono_id = ? OR p.id IN (SELECT pasta_id FROM pasta_departamentos WHERE departamento_id IN (${ph})))`
+        accessParams = [req.user.id, ...req.user.departamento_ids]
+      } else {
+        accessWhere = ' AND p.dono_id = ?'
+        accessParams = [req.user.id]
+      }
+    }
+
+    const queryParams = paiId ? [paiId, ...accessParams] : [...accessParams]
+
     // Buscar filhos diretos
     const [pastas] = await db.execute(
       `SELECT p.id, p.uuid, p.nome, p.pai_id, p.criado_em, p.token_partilha,
               COUNT(d.id) AS total_docs,
-              COUNT(sp.id) AS total_subpastas
+              COUNT(sp.id) AS total_subpastas,
+              (SELECT GROUP_CONCAT(departamento_id) FROM pasta_departamentos WHERE pasta_id = p.id) AS departamentos_partilhados
        FROM pastas p
        LEFT JOIN documentos d  ON d.pasta_id = p.id
        LEFT JOIN pastas     sp ON sp.pai_id  = p.id
        WHERE p.pai_id ${paiId ? '= ?' : 'IS NULL'}
-         AND p.dono_id = ?
+         ${accessWhere}
        GROUP BY p.id
        ORDER BY p.nome ASC`,
-      paiId ? [paiId, req.user.id] : [req.user.id]
+      queryParams
     )
 
     // Construir breadcrumb
@@ -74,9 +91,22 @@ router.get('/', async (req, res) => {
 router.get('/todas', async (req, res) => {
   try {
     const db = await getPool()
+    let accessWhere = ''
+    let accessParams = []
+    if (req.user.role !== 'admin' && !req.user.is_boss) {
+      if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+        const ph = req.user.departamento_ids.map(() => '?').join(',')
+        accessWhere = ` WHERE p.dono_id = ? OR p.id IN (SELECT pasta_id FROM pasta_departamentos WHERE departamento_id IN (${ph}))`
+        accessParams = [req.user.id, ...req.user.departamento_ids]
+      } else {
+        accessWhere = ' WHERE p.dono_id = ?'
+        accessParams = [req.user.id]
+      }
+    }
+
     const [pastas] = await db.execute(
-      'SELECT id, uuid, nome, pai_id FROM pastas WHERE dono_id = ? ORDER BY nome ASC',
-      [req.user.id]
+      `SELECT p.id, p.uuid, p.nome, p.pai_id FROM pastas p ${accessWhere} ORDER BY p.nome ASC`,
+      accessParams
     )
     // Montar nomes com caminho completo para o select
     const mapaId = {}
@@ -260,6 +290,41 @@ router.delete('/:uuid/partilhar', async (req, res) => {
       return res.status(403).json({ erro: 'Sem permissão' })
     await db.execute('UPDATE pastas SET token_partilha = NULL WHERE uuid = ?', [req.params.uuid])
     res.json({ mensagem: 'Partilha revogada' })
+  } catch (err) { res.status(500).json({ erro: err.message }) }
+})
+
+/* Partilha com Departamentos */
+router.get('/:uuid/departamentos', async (req, res) => {
+  try {
+    const db = await getPool()
+    const [[pasta]] = await db.execute('SELECT id, dono_id FROM pastas WHERE uuid = ?', [req.params.uuid])
+    if (!pasta) return res.status(404).json({ erro: 'Pasta não encontrada' })
+
+    const [deps] = await db.execute('SELECT departamento_id FROM pasta_departamentos WHERE pasta_id = ?', [pasta.id])
+    res.json(deps.map(d => d.departamento_id))
+  } catch (err) { res.status(500).json({ erro: err.message }) }
+})
+
+router.post('/:uuid/departamentos', async (req, res) => {
+  try {
+    const db = await getPool()
+    const { departamento_ids } = req.body // array de ids
+    const [[pasta]] = await db.execute('SELECT id, dono_id FROM pastas WHERE uuid = ?', [req.params.uuid])
+    if (!pasta) return res.status(404).json({ erro: 'Pasta não encontrada' })
+
+    if (pasta.dono_id !== req.user.id && req.user.role !== 'admin')
+      return res.status(403).json({ erro: 'Sem permissão' })
+
+    // Limpar partilhas antigas
+    await db.execute('DELETE FROM pasta_departamentos WHERE pasta_id = ?', [pasta.id])
+    
+    // Inserir novas
+    if (departamento_ids && departamento_ids.length > 0) {
+      const vals = departamento_ids.map(id => [pasta.id, id])
+      await db.query('INSERT INTO pasta_departamentos (pasta_id, departamento_id) VALUES ?', [vals])
+    }
+    
+    res.json({ mensagem: 'Partilha atualizada' })
   } catch (err) { res.status(500).json({ erro: err.message }) }
 })
 

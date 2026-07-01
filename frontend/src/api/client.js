@@ -1,4 +1,5 @@
-const BASE = import.meta.env.VITE_API_BASE ?? 'https://docback.kapital360.ao/api'
+//const BASE = import.meta.env.VITE_API_BASE ?? 'https://docback.kapital360.ao/api'
+const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3001/api'
 
 function getToken() { return localStorage.getItem('dv_token') || '' }
 
@@ -119,4 +120,12 @@ export const revogarPartilhaDoc  = (uuid) => req(`/documentos/${uuid}/partilhar`
 export const partilharPasta      = (uuid) => req(`/pastas/${uuid}/partilhar`,     { method: 'POST' })
 export const revogarPartilhaPasta= (uuid) => req(`/pastas/${uuid}/partilhar`,     { method: 'DELETE' })
 export const getPartilha         = (token) => reqPublic(`/partilha/${token}`)
+
+// ── Departamentos e Partilha Interna ────────────────────────────
+export const getDepartamentos = () => req('/departamentos')
+export const getDepartamentosPartilhadosPasta = (uuid) => req(`/pastas/${uuid}/departamentos`)
+export const setDepartamentosPartilhadosPasta = (uuid, departamento_ids) => req(`/pastas/${uuid}/departamentos`, { method: 'POST', body: { departamento_ids } })
+export const getDepartamentosPartilhadosDoc = (uuid) => req(`/documentos/${uuid}/departamentos`)
+export const setDepartamentosPartilhadosDoc = (uuid, departamento_ids) => req(`/documentos/${uuid}/departamentos`, { method: 'POST', body: { departamento_ids } })
+
 export const BASE_URL            = BASE

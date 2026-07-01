@@ -247,7 +247,7 @@ function FolderRow({ pasta, onOpen, onDelete, onRenameRow, onShare }) {
       onMouseLeave={() => { if (!menuOpen) setHov(false) }}
     >
       <button style={s.folderBtn} onClick={() => onOpen(pasta.uuid)}>
-        <span style={{ fontSize: 14 }}>{pasta.token_partilha ? '🌐' : '📁'}</span>
+        <span style={{ fontSize: 14 }}>{pasta.token_partilha ? '🌐' : (pasta.departamentos_partilhados?.length ? '👥' : '📁')}</span>
         <span style={s.folderName}>{pasta.nome}</span>
         <span style={s.folderMeta}>
           {pasta.total_docs > 0 && `${pasta.total_docs} doc${pasta.total_docs > 1 ? 's' : ''}`}
@@ -267,7 +267,7 @@ function FolderRow({ pasta, onOpen, onDelete, onRenameRow, onShare }) {
             ✏️ Renomear
           </button>
           <button style={s.ctxItem} onClick={() => { setMenuOpen(false); onShare() }}>
-            🔗 {pasta.token_partilha ? 'Gerir partilha' : 'Partilhar'}
+            🔗 {(pasta.token_partilha || pasta.departamentos_partilhados?.length) ? 'Gerir partilha' : 'Partilhar'}
           </button>
           <button style={{ ...s.ctxItem, color: 'var(--danger)' }} onClick={() => { onDelete(pasta); setMenuOpen(false) }}>
             🗑️ Eliminar

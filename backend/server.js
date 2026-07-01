@@ -8,6 +8,7 @@ const pastasRoutes     = require('./routes/pastas')
 const documentosRoutes = require('./routes/documentos')
 const usersRoutes      = require('./routes/utilizadores')
 const partilhaRoutes   = require('./routes/partilha')
+const departamentosRoutes = require('./routes/departamentos')
 
 const app  = express()
 const PORT = process.env.PORT || 3001
@@ -21,6 +22,7 @@ app.use('/api/partilha',   partilhaRoutes)   // público — sem auth
 app.use('/api/pastas',     pastasRoutes)
 app.use('/api/documentos', documentosRoutes)
 app.use('/api/utilizadores', usersRoutes)
+app.use('/api/departamentos', departamentosRoutes)
 app.get('/api/status', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 
 // Serve build React em produção

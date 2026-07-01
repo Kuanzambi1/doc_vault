@@ -66,9 +66,90 @@ async function initDB() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
   `)
 
-  // Colunas de partilha (adicionar se não existirem)
+  // Departamentos
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS departamentos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nome VARCHAR(255) NOT NULL UNIQUE,
+      criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `)
+
+  // Inserir departamentos iniciais
+  const [deps] = await db.query('SELECT COUNT(*) as count FROM departamentos')
+  if (deps[0].count === 0) {
+    await db.query(`
+      INSERT INTO departamentos (nome) VALUES 
+      ('Geral'),
+      ('Administração e Finanças'),
+      ('TI'),
+      ('Marketing'),
+      ('Análise e Relatórios Research'),
+      ('Design')
+    `)
+  } else {
+    // Garantir que "Geral" existe caso a BD já esteja criada
+    const [[g]] = await db.query("SELECT id FROM departamentos WHERE nome = 'Geral'")
+    if (!g) {
+      await db.query("INSERT INTO departamentos (nome) VALUES ('Geral')")
+    }
+    // Garantir que "Design" existe
+    const [[d]] = await db.query("SELECT id FROM departamentos WHERE nome = 'Design'")
+    if (!d) {
+      await db.query("INSERT INTO departamentos (nome) VALUES ('Design')")
+    }
+  }
+
+  // Colunas de partilha e departamento
   try { await db.query(`ALTER TABLE documentos ADD COLUMN token_partilha VARCHAR(36) NULL DEFAULT NULL`) } catch(_){}
   try { await db.query(`ALTER TABLE pastas     ADD COLUMN token_partilha VARCHAR(36) NULL DEFAULT NULL`) } catch(_){}
+  try {
+    await db.query(`ALTER TABLE utilizadores ADD COLUMN departamento_id INT NULL DEFAULT NULL`)
+    await db.query(`ALTER TABLE utilizadores ADD CONSTRAINT fk_user_dep FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE SET NULL`)
+  } catch(_) {}
+
+  // Partilha de pastas com departamentos
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS pasta_departamentos (
+      pasta_id INT NOT NULL,
+      departamento_id INT NOT NULL,
+      PRIMARY KEY (pasta_id, departamento_id),
+      FOREIGN KEY (pasta_id) REFERENCES pastas(id) ON DELETE CASCADE,
+      FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `)
+
+  // Partilha de documentos com departamentos
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS documento_departamentos (
+      documento_id INT NOT NULL,
+      departamento_id INT NOT NULL,
+      PRIMARY KEY (documento_id, departamento_id),
+      FOREIGN KEY (documento_id) REFERENCES documentos(id) ON DELETE CASCADE,
+      FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `)
+
+  // Associação utilizadores <-> departamentos (múltiplos)
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS utilizador_departamentos (
+      utilizador_id INT NOT NULL,
+      departamento_id INT NOT NULL,
+      PRIMARY KEY (utilizador_id, departamento_id),
+      FOREIGN KEY (utilizador_id) REFERENCES utilizadores(id) ON DELETE CASCADE,
+      FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `)
+
+  // Migrar dados antigos de utilizadores.departamento_id para a nova tabela
+  try {
+    const [users] = await db.query('SELECT id, departamento_id FROM utilizadores WHERE departamento_id IS NOT NULL')
+    for (const u of users) {
+      await db.query('INSERT IGNORE INTO utilizador_departamentos (utilizador_id, departamento_id) VALUES (?, ?)', [u.id, u.departamento_id])
+    }
+  } catch (err) {
+    console.error('Erro na migração de utilizador_departamentos:', err)
+  }
 
   console.log('✅  Base de dados pronta')
 }
