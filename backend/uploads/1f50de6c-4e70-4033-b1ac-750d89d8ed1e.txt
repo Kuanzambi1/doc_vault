@@ -1,0 +1,406 @@
+# Estudos de Caso — Consultoria de Marketing Digital
+
+---
+
+# Caso 1 — Loja de Roupas com Poucas Vendas
+
+## Situação
+
+Uma loja de roupas femininas em Luanda possui Instagram e WhatsApp, mas quase não vende online.
+
+Problemas identificados:
+
+* Poucas publicações
+* Sem identidade visual
+* Não responde rápido aos clientes
+* Não usa anúncios pagos
+* Não conhece o público-alvo
+
+---
+
+## Análise do Consultor
+
+A empresa possui presença digital fraca e falta de posicionamento.
+
+Não existe:
+
+* Branding
+* Persona
+* Estratégia de conteúdo
+* Funil de vendas
+
+---
+
+## Solução Proposta
+
+### 1. Definir Persona
+
+Mulheres entre 18–35 anos interessadas em:
+
+* Moda
+* Tendências
+* Compras online
+
+---
+
+### 2. Melhorar Branding
+
+* Padronizar cores
+* Criar logotipo consistente
+* Melhorar biografia do Instagram
+* Criar estilo visual moderno
+
+---
+
+### 3. Estratégia de Conteúdo
+
+Publicar:
+
+* Looks do dia
+* Dicas de moda
+* Bastidores
+* Promoções
+* Depoimentos de clientes
+
+Frequência:
+
+* 1 post diário
+* Stories todos os dias
+
+---
+
+### 4. Implementar CTA
+
+Exemplos:
+
+* “Compre agora”
+* “Envie mensagem no WhatsApp”
+* “Reserve já”
+
+---
+
+### 5. Criar Campanhas Patrocinadas
+
+Objetivos:
+
+* Alcance
+* Engajamento
+* Conversão
+
+---
+
+## Resultado Esperado
+
+* Mais seguidores
+* Mais mensagens
+* Maior reconhecimento da marca
+* Aumento das vendas
+
+---
+
+# Caso 2 — Restaurante com Má Reputação Online
+
+## Situação
+
+Um restaurante recebe muitas reclamações no Facebook:
+
+* Demora no atendimento
+* Falta de resposta
+* Comentários negativos
+
+As vendas começaram a cair.
+
+---
+
+## Problema Principal
+
+Má reputação digital.
+
+---
+
+## Solução do Consultor
+
+### 1. Monitoramento das Redes Sociais
+
+Acompanhar:
+
+* Comentários
+* Avaliações
+* Menções da marca
+
+---
+
+### 2. Responder Clientes Rapidamente
+
+* Pedir desculpas
+* Resolver problemas
+* Mostrar preocupação
+
+---
+
+### 3. Estratégia de Conteúdo
+
+Publicar:
+
+* Qualidade da comida
+* Bastidores da cozinha
+* Depoimentos de clientes
+* Promoções
+
+---
+
+### 4. Programa de Fidelização
+
+Oferecer:
+
+* Descontos
+* Cupões
+* Benefícios para clientes frequentes
+
+---
+
+## Resultado Esperado
+
+* Recuperação da confiança
+* Melhor reputação
+* Aumento do engajamento
+* Retorno dos clientes
+
+---
+
+# Caso 3 — Empresa Sem Clientes no Site
+
+## Situação
+
+Uma empresa criou um site moderno, mas quase ninguém visita.
+
+---
+
+## Diagnóstico
+
+Problema de SEO e tráfego.
+
+---
+
+## Solução do Consultor
+
+### 1. Aplicar SEO
+
+Melhorar:
+
+* Palavras-chave
+* Títulos
+* Velocidade do site
+* Conteúdo
+
+---
+
+### 2. Criar Blog
+
+Publicar artigos relacionados ao negócio.
+
+Exemplo:
+
+* Dicas
+* Tutoriais
+* Tendências
+
+---
+
+### 3. Usar Google Ads
+
+Criar anúncios pagos para:
+
+* Atrair visitantes
+* Gerar leads
+
+---
+
+### 4. Criar Landing Pages
+
+Objetivo:
+Capturar contactos dos visitantes.
+
+---
+
+## Resultado Esperado
+
+* Mais visitas
+* Mais leads
+* Mais vendas
+
+---
+
+# Caso 4 — Marca Nova Sem Reconhecimento
+
+## Situação
+
+Uma nova marca de cosméticos entrou no mercado, mas ninguém conhece a empresa.
+
+---
+
+## Problema
+
+Falta de branding e posicionamento.
+
+---
+
+## Solução do Consultor
+
+### 1. Construir Identidade da Marca
+
+Definir:
+
+* Missão
+* Valores
+* Cores
+* Linguagem
+
+---
+
+### 2. Trabalhar com Influencers
+
+Parcerias com criadores de conteúdo locais.
+
+---
+
+### 3. Storytelling
+
+Contar:
+
+* História da marca
+* Benefícios dos produtos
+* Impacto social
+
+---
+
+### 4. Campanhas nas Redes Sociais
+
+Foco em:
+
+* Instagram
+* TikTok
+* Facebook
+
+---
+
+## Resultado Esperado
+
+* Reconhecimento da marca
+* Construção de comunidade
+* Crescimento das vendas
+
+---
+
+# Caso 5 — Escola Técnica com Poucas Inscrições
+
+## Situação
+
+Uma escola técnica está com baixa procura de alunos.
+
+---
+
+## Diagnóstico
+
+Falta de comunicação digital.
+
+---
+
+## Solução do Consultor
+
+### 1. Definir Público-Alvo
+
+* Jovens do ensino médio
+* Pais
+* Trabalhadores buscando qualificação
+
+---
+
+### 2. Criar Funil de Vendas
+
+## Topo
+
+Conteúdo:
+
+* Importância dos cursos técnicos
+* Mercado de trabalho
+
+## Meio
+
+* Depoimentos de alunos
+* Vídeos das aulas
+
+## Fundo
+
+* Promoções
+* Facilidades de pagamento
+
+---
+
+### 3. Captura de Leads
+
+Landing page com:
+
+* Formulário
+* WhatsApp
+* CTA forte
+
+---
+
+### 4. Email Marketing
+
+Enviar:
+
+* Informações dos cursos
+* Datas de inscrição
+* Benefícios
+
+---
+
+## Resultado Esperado
+
+* Mais inscrições
+* Mais reconhecimento
+* Melhor relacionamento com futuros alunos
+
+---
+
+# Modelo de Resposta para Prova
+
+Se aparecer estudo de caso:
+
+## 1. Identifique o problema
+
+Exemplo:
+
+* Poucas vendas
+* Falta de visibilidade
+* Má reputação
+
+## 2. Faça diagnóstico
+
+Exemplo:
+
+* Falta de SEO
+* Branding fraco
+* Pouco conteúdo
+
+## 3. Apresente solução
+
+Use conceitos como:
+
+* Persona
+* SEO
+* CRM
+* Redes sociais
+* Funil de vendas
+* Marketing de conteúdo
+
+## 4. Mostre resultado esperado
+
+Exemplo:
+
+* Mais vendas
+* Mais leads
+* Mais reconhecimento
+* Melhor reputação

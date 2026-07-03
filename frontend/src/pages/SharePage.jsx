@@ -4,8 +4,8 @@ import * as api from '../api/client.js'
 const API = api.BASE_URL
 const fmt = b => b < 1024 ? b + 'B' : b < 1048576 ? (b/1024).toFixed(1)+'KB' : (b/1048576).toFixed(2)+'MB'
 const EXT_COLOR = {
-  pdf:'#E05252', doc:'#5B9BD5', docx:'#5B9BD5', txt:'#C4B95A',
-  xls:'#4CAF7D', xlsx:'#4CAF7D', csv:'#4CAF7D', png:'#9B8FE0', jpg:'#9B8FE0', jpeg:'#9B8FE0',
+  pdf:'#E03131', doc:'#1971C2', docx:'#1971C2', txt:'#F08C00',
+  xls:'#2B8A3E', xlsx:'#2B8A3E', csv:'#2B8A3E', png:'#845EF7', jpg:'#845EF7', jpeg:'#845EF7',
 }
 
 export default function SharePage({ token }) {
@@ -68,7 +68,7 @@ function Brand({ shared }) {
 
 function DocView({ data, token }) {
   const ext = data.extensao?.toUpperCase() || '?'
-  const color = EXT_COLOR[data.extensao?.toLowerCase()] || '#9A9990'
+  const color = EXT_COLOR[data.extensao?.toLowerCase()] || 'var(--text2)'
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
       <div style={s.fileCard}>
@@ -104,7 +104,7 @@ function PastaView({ data, token }) {
         <div style={{ display:'flex', flexDirection:'column', gap:4, maxHeight:400, overflowY:'auto' }}>
           {data.documentos.map(doc => {
             const ext = doc.extensao?.toUpperCase() || '?'
-            const color = EXT_COLOR[doc.extensao?.toLowerCase()] || '#9A9990'
+            const color = EXT_COLOR[doc.extensao?.toLowerCase()] || 'var(--text2)'
             return (
               <div key={doc.uuid} style={s.docRow}>
                 <div style={{ ...s.extBadgeSm, background:color+'22', color }}>{ext.slice(0,4)}</div>
@@ -129,7 +129,7 @@ const s = {
   fileCard:  { display:'flex', alignItems:'center', gap:14, padding:'14px 16px', background:'var(--bg)', border:'0.5px solid var(--border)', borderRadius:'var(--r)' },
   extBadge:  { width:48, height:48, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 },
   extBadgeSm:{ width:32, height:32, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9,  fontWeight:700, flexShrink:0 },
-  dlBtnBig:  { display:'block', padding:'12px', borderRadius:'var(--r)', background:'var(--accent)', color:'#0F0F0E', textAlign:'center', textDecoration:'none', fontSize:14, fontWeight:600 },
+  dlBtnBig:  { display:'block', padding:'12px', borderRadius:'var(--r)', background:'var(--accent)', color:'#FFFFFF', textAlign:'center', textDecoration:'none', fontSize:14, fontWeight:600 },
   docRow:    { display:'flex', alignItems:'center', gap:10, padding:'8px 12px', background:'var(--bg)', border:'0.5px solid var(--border)', borderRadius:'var(--r)' },
   dlBtn:     { padding:'5px 12px', borderRadius:'var(--r)', border:'0.5px solid var(--border2)', background:'var(--bg2)', color:'var(--accent)', textDecoration:'none', fontSize:13, fontWeight:600, flexShrink:0 },
 }

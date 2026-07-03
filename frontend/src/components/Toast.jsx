@@ -1,8 +1,8 @@
 import React from 'react'
 
 const TC = {
-  success: { bg: 'var(--green-bg)',  border: '#1E4D30', color: 'var(--green)',  icon: '✓' },
-  error:   { bg: 'var(--danger-bg)', border: '#5A2020', color: 'var(--danger)', icon: '✕' },
+  success: { bg: 'var(--green-bg)',  border: 'var(--green)', color: 'var(--green)',  icon: '✓' },
+  error:   { bg: 'var(--danger-bg)', border: 'var(--danger)', color: 'var(--danger)', icon: '✕' },
   info:    { bg: 'var(--bg3)',       border: 'var(--border2)', color: 'var(--text2)', icon: 'ℹ' },
 }
 

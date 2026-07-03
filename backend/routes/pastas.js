@@ -23,17 +23,6 @@ router.get('/', async (req, res) => {
     let paiId   = null
     let paiInfo = null
 
-    // Se veio pai_uuid, resolver para id numérico
-    if (pai_uuid) {
-      const [[pai]] = await db.execute(
-        'SELECT id, uuid, nome, pai_id FROM pastas WHERE uuid = ? AND dono_id = ?',
-        [pai_uuid, req.user.id]
-      )
-      if (!pai) return res.status(404).json({ erro: 'Pasta pai não encontrada' })
-      paiId   = pai.id
-      paiInfo = pai
-    }
-
     // Lógica de acesso (admin vê tudo, outros veem próprio + partilhados com dep)
     let accessWhere = ''
     let accessParams = []
@@ -46,6 +35,17 @@ router.get('/', async (req, res) => {
         accessWhere = ' AND p.dono_id = ?'
         accessParams = [req.user.id]
       }
+    }
+
+    // Se veio pai_uuid, resolver para id numérico
+    if (pai_uuid) {
+      const [[pai]] = await db.execute(
+        `SELECT p.id, p.uuid, p.nome, p.pai_id FROM pastas p WHERE p.uuid = ? ${accessWhere}`,
+        [pai_uuid, ...accessParams]
+      )
+      if (!pai) return res.status(404).json({ erro: 'Pasta pai não encontrada' })
+      paiId   = pai.id
+      paiInfo = pai
     }
 
     const queryParams = paiId ? [paiId, ...accessParams] : [...accessParams]
@@ -135,12 +135,25 @@ router.post('/', async (req, res) => {
     const db = await getPool()
     let paiId = null
 
+    let accessWhere = ''
+    let accessParams = []
+    if (req.user.role !== 'admin' && !req.user.is_boss) {
+      if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+        const ph = req.user.departamento_ids.map(() => '?').join(',')
+        accessWhere = ` AND (p.dono_id = ? OR p.id IN (SELECT pasta_id FROM pasta_departamentos WHERE departamento_id IN (${ph})))`
+        accessParams = [req.user.id, ...req.user.departamento_ids]
+      } else {
+        accessWhere = ' AND p.dono_id = ?'
+        accessParams = [req.user.id]
+      }
+    }
+
     if (pai_uuid) {
       const [[pai]] = await db.execute(
-        'SELECT id FROM pastas WHERE uuid = ? AND dono_id = ?',
-        [pai_uuid, req.user.id]
+        `SELECT p.id FROM pastas p WHERE p.uuid = ? ${accessWhere}`,
+        [pai_uuid, ...accessParams]
       )
-      if (!pai) return res.status(404).json({ erro: 'Pasta pai não encontrada' })
+      if (!pai) return res.status(404).json({ erro: 'Pasta pai não encontrada ou sem permissão' })
       paiId = pai.id
     }
 
@@ -156,6 +169,11 @@ router.post('/', async (req, res) => {
       'INSERT INTO pastas (uuid, nome, pai_id, dono_id) VALUES (?, ?, ?, ?)',
       [uuid, nome.trim(), paiId, req.user.id]
     )
+
+    if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+      const depsVals = req.user.departamento_ids.map(dId => [r.insertId, dId])
+      await db.query('INSERT IGNORE INTO pasta_departamentos (pasta_id, departamento_id) VALUES ?', [depsVals])
+    }
 
     res.status(201).json({
       id: r.insertId, uuid, nome: nome.trim(),

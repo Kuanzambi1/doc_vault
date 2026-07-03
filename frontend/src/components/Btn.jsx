@@ -1,10 +1,10 @@
 import React from 'react'
 
 const V = {
-  primary:   { background: 'var(--accent)',  color: '#0F0F0E', border: 'none' },
+  primary:   { background: 'var(--accent)',  color: '#FFFFFF', border: 'none' },
   secondary: { background: 'var(--bg3)',     color: 'var(--text)', border: '0.5px solid var(--border2)' },
   ghost:     { background: 'transparent',    color: 'var(--text2)', border: 'none' },
-  danger:    { background: 'transparent',    color: 'var(--danger)', border: '0.5px solid #5A2020' },
+  danger:    { background: 'transparent',    color: 'var(--danger)', border: '0.5px solid var(--danger)' },
 }
 
 export default function Btn({ children, variant = 'secondary', size = 'md', disabled, style, ...p }) {

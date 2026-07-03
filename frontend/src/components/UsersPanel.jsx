@@ -210,6 +210,7 @@ export default function UsersPanel({ user, onToast }) {
           user={chgPwdUser}
           onClose={() => setChgPwdUser(null)}
           onToast={onToast}
+          requireCurrent={false}
         />
       )}
     </div>
@@ -234,5 +235,5 @@ const s = {
   label:   { display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--text2)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.05em' },
   input:   { width: '100%', padding: '8px 10px', background: 'var(--bg)', border: '0.5px solid var(--border2)', borderRadius: 'var(--r)', color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' },
   select:  { width: '100%', padding: '8px 10px', background: 'var(--bg)', border: '0.5px solid var(--border2)', borderRadius: 'var(--r)', color: 'var(--text)', fontSize: 13, outline: 'none', boxSizing: 'border-box' },
-  warnBox: { padding: '12px 14px', background: 'var(--danger-bg)', border: '0.5px solid #5A2020', borderRadius: 'var(--r)', color: 'var(--danger)', fontSize: 13 },
+  warnBox: { padding: '12px 14px', background: 'var(--danger-bg)', border: '0.5px solid var(--danger)', borderRadius: 'var(--r)', color: 'var(--danger)', fontSize: 13 },
 }

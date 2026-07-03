@@ -1,23 +1,25 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #0F0F0E;
-  --bg2:      #161614;
-  --bg3:      #1E1E1C;
-  --border:   #2A2A28;
-  --border2:  #333330;
-  --text:     #F0EFE8;
-  --text2:    #9A9990;
-  --text3:    #5A5A55;
-  --accent:   #D4A843;
-  --accent2:  #B8912E;
-  --accent-bg:#1E1A0F;
-  --danger:   #E05252;
-  --danger-bg:#1E1010;
-  --green:    #4CAF7D;
-  --green-bg: #0F1E15;
-  --r:        6px;
-  --r-lg:     10px;
+  --bg:         #FFFFFF;
+  --bg2:        #F8F9FA;
+  --bg3:        #F1F3F5;
+  --border:     #E9ECEF;
+  --border2:    #DEE2E6;
+  --text:       #212529;
+  --text2:      #495057;
+  --text3:      #868E96;
+  --accent:     #10513B;
+  --accent2:    #0C3A2A;
+  --accent-bg:  #E7EFEA;
+  --secondary:  #E56500;
+  --secondary-bg:#FCECDD;
+  --danger:     #E03131;
+  --danger-bg:  #FFE3E3;
+  --green:      #2B8A3E;
+  --green-bg:   #EBFBEE;
+  --r:          6px;
+  --r-lg:       10px;
   font-family: 'Instrument Sans', sans-serif;
 }
 

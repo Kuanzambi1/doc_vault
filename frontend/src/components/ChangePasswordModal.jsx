@@ -1,9 +1,9 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import Modal from './Modal.jsx'
 import Btn   from './Btn.jsx'
 import * as api from '../api/client.js'
 
-export default function ChangePasswordModal({ user, onClose, onToast }) {
+export default function ChangePasswordModal({ user, onClose, onToast, requireCurrent = true }) {
   const [form, setForm] = useState({ atual: '', nova: '', confirmar: '' })
   const [saving, setSaving] = useState(false)
   const [erros,  setErros]  = useState({})
@@ -15,7 +15,7 @@ export default function ChangePasswordModal({ user, onClose, onToast }) {
 
   const validar = () => {
     const e = {}
-    if (!form.atual)               e.atual      = 'Insira a password atual'
+    if (requireCurrent && !form.atual) e.atual      = 'Insira a password atual'
     if (!form.nova)                e.nova       = 'Insira a nova password'
     else if (form.nova.length < 6) e.nova       = 'Mínimo 6 caracteres'
     if (form.nova !== form.confirmar) e.confirmar = 'As passwords não coincidem'
@@ -28,8 +28,10 @@ export default function ChangePasswordModal({ user, onClose, onToast }) {
 
     setSaving(true)
     try {
-      // Verifica a password atual via login antes de alterar
-      await api.login(user.email, form.atual)
+      if (requireCurrent) {
+        // Verifica a password atual via login antes de alterar
+        await api.login(user.email, form.atual)
+      }
       await api.atualizarUtilizador(user.uuid, { password: form.nova })
       onToast('Password alterada com sucesso!', 'success')
       onClose()
@@ -43,8 +45,8 @@ export default function ChangePasswordModal({ user, onClose, onToast }) {
     } finally { setSaving(false) }
   }
 
-  const Field = ({ label, name, placeholder }) => (
-    <div>
+  const renderField = (label, name, placeholder) => (
+    <div key={name}>
       <label style={s.label}>{label}</label>
       <input
         style={{ ...s.input, ...(erros[name] ? s.inputErr : {}) }}
@@ -68,9 +70,9 @@ export default function ChangePasswordModal({ user, onClose, onToast }) {
           <span style={s.infoEmail}>{user.email}</span>
         </div>
 
-        <Field label="Password Atual"     name="atual"     placeholder="Insira a password atual" />
-        <Field label="Nova Password"      name="nova"      placeholder="Mínimo 6 caracteres" />
-        <Field label="Confirmar Password" name="confirmar" placeholder="Repita a nova password" />
+        {requireCurrent && renderField("Password Atual", "atual", "Insira a password atual")}
+        {renderField("Nova Password", "nova", "Mínimo 6 caracteres")}
+        {renderField("Confirmar Password", "confirmar", "Repita a nova password")}
 
         <div style={s.hint}>
           A nova password deve ter pelo menos 6 caracteres.

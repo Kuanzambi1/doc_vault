@@ -345,7 +345,7 @@ const s = {
   },
   warnBox: {
     padding: '12px 14px', background: 'var(--danger-bg)',
-    border: '0.5px solid #5A2020', borderRadius: 'var(--r)',
+    border: '0.5px solid var(--danger)', borderRadius: 'var(--r)',
     color: 'var(--danger)', fontSize: 13, lineHeight: 1.6,
   },
 }

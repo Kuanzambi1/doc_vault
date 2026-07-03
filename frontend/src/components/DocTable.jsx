@@ -5,16 +5,16 @@ const fmt = b => b < 1024 ? b + 'B' : b < 1048576 ? (b / 1024).toFixed(1) + 'KB'
 const fmtDate = iso => new Date(iso).toLocaleDateString('pt', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 const EXT = {
-  pdf:  ['#3D1C1C', '#E05252'], doc:  ['#1C2A3D', '#5B9BD5'],
-  docx: ['#1C2A3D', '#5B9BD5'], txt:  ['#2A2A1C', '#C4B95A'],
-  xls:  ['#1C3020', '#4CAF7D'], xlsx: ['#1C3020', '#4CAF7D'],
-  csv:  ['#1C3020', '#4CAF7D'], png:  ['#221C3D', '#9B8FE0'],
-  jpg:  ['#221C3D', '#9B8FE0'], jpeg: ['#221C3D', '#9B8FE0'],
+  pdf:  ['#FFE3E3', '#E03131'], doc:  ['#E7F5FF', '#1971C2'],
+  docx: ['#E7F5FF', '#1971C2'], txt:  ['#FFF3BF', '#F08C00'],
+  xls:  ['#EBFBEE', '#2B8A3E'], xlsx: ['#EBFBEE', '#2B8A3E'],
+  csv:  ['#EBFBEE', '#2B8A3E'], png:  ['#F3F0FF', '#845EF7'],
+  jpg:  ['#F3F0FF', '#845EF7'], jpeg: ['#F3F0FF', '#845EF7'],
 }
 
 function ExtBadge({ ext = '' }) {
-  const e = ext.toLowerCase()
-  const [bg, color] = EXT[e] || ['#2A2A28', '#9A9990']
+  const e = (ext || '').toLowerCase()
+  const [bg, color] = EXT[e] || ['var(--border)', 'var(--text2)']
   return (
     <div style={{
       width: 30, height: 30, borderRadius: 5, background: bg, color,

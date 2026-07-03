@@ -363,10 +363,10 @@ const s = {
   queueItem: { background: 'var(--bg2)', border: '0.5px solid var(--border)', borderRadius: 'var(--r)', padding: '7px 12px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 12 },
   queueName: { flex: 0 , minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 },
   queueBar: { flex: 1, height: 3, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' },
-  selBar: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--accent-bg)', border: '0.5px solid #3D3010', borderRadius: 'var(--r)', fontSize: 13 },
+  selBar: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--accent-bg)', border: '0.5px solid var(--border)', borderRadius: 'var(--r)', fontSize: 13 },
   sectionHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   sectionTitle: { fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.07em' },
-  warnBox: { padding: '11px 13px', background: 'var(--danger-bg)', border: '0.5px solid #5A2020', borderRadius: 'var(--r)', color: 'var(--danger)', fontSize: 13 },
+  warnBox: { padding: '11px 13px', background: 'var(--danger-bg)', border: '0.5px solid var(--danger)', borderRadius: 'var(--r)', color: 'var(--danger)', fontSize: 13 },
   formLabel: { display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' },
   select: { width: '100%', padding: '9px 11px', background: 'var(--bg)', border: '0.5px solid var(--border2)', borderRadius: 'var(--r)', color: 'var(--text)', fontSize: 13, outline: 'none' },
 }

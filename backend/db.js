@@ -82,21 +82,14 @@ async function initDB() {
       INSERT INTO departamentos (nome) VALUES 
       ('Geral'),
       ('Administração e Finanças'),
-      ('TI'),
-      ('Marketing'),
-      ('Análise e Relatórios Research'),
-      ('Design')
+      ('IT'),
+      ('Marketing e Design')
     `)
   } else {
     // Garantir que "Geral" existe caso a BD já esteja criada
     const [[g]] = await db.query("SELECT id FROM departamentos WHERE nome = 'Geral'")
     if (!g) {
       await db.query("INSERT INTO departamentos (nome) VALUES ('Geral')")
-    }
-    // Garantir que "Design" existe
-    const [[d]] = await db.query("SELECT id FROM departamentos WHERE nome = 'Design'")
-    if (!d) {
-      await db.query("INSERT INTO departamentos (nome) VALUES ('Design')")
     }
   }
 

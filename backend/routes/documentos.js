@@ -17,11 +17,26 @@ router.post('/', upload.array('files', 50), async (req, res) => {
   const { pasta_uuid } = req.body
   let pastaId = null
 
+  let accessWhere = ''
+  let accessParams = []
+  if (req.user.role !== 'admin' && !req.user.is_boss) {
+    if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+      const ph = req.user.departamento_ids.map(() => '?').join(',')
+      accessWhere = ` AND (p.dono_id = ? OR p.id IN (SELECT pasta_id FROM pasta_departamentos WHERE departamento_id IN (${ph})))`
+      accessParams = [req.user.id, ...req.user.departamento_ids]
+    } else {
+      accessWhere = ' AND p.dono_id = ?'
+      accessParams = [req.user.id]
+    }
+  }
+
   if (pasta_uuid) {
     const [[p]] = await db.execute(
-      'SELECT id FROM pastas WHERE uuid = ? AND dono_id = ?', [pasta_uuid, req.user.id]
+      `SELECT p.id FROM pastas p WHERE p.uuid = ? ${accessWhere}`, 
+      [pasta_uuid, ...accessParams]
     )
     if (p) pastaId = p.id
+    else return res.status(404).json({ erro: 'Pasta de destino não encontrada ou sem permissão' })
   }
 
   const resultados = []
@@ -34,6 +49,12 @@ router.post('/', upload.array('files', 50), async (req, res) => {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [uuid, file.originalname, file.filename, file.mimetype, file.size, ext, pastaId, req.user.id]
       )
+
+      if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
+        const depsVals = req.user.departamento_ids.map(dId => [r.insertId, dId])
+        await db.query('INSERT IGNORE INTO documento_departamentos (documento_id, departamento_id) VALUES ?', [depsVals])
+      }
+
       resultados.push({ id: r.insertId, uuid, nome_original: file.originalname, ok: true })
     } catch (err) {
       fs.unlink(file.path, () => {})

@@ -157,12 +157,12 @@ const s = {
   },
   erro: {
     padding: '10px 12px', background: 'var(--danger-bg)',
-    border: '0.5px solid #5A2020', borderRadius: 'var(--r)',
+    border: '0.5px solid var(--danger)', borderRadius: 'var(--r)',
     color: 'var(--danger)', fontSize: 13, marginBottom: '1rem',
   },
   submitBtn: {
     width: '100%', padding: '11px', borderRadius: 'var(--r)',
-    background: 'var(--accent)', color: '#0F0F0E',
+    background: 'var(--accent)', color: '#FFFFFF',
     border: 'none', fontSize: 14, fontWeight: 600,
     cursor: 'pointer', marginTop: '0.5rem', marginBottom: '1.5rem',
     transition: 'opacity .15s',
@@ -174,6 +174,6 @@ const s = {
   },
   spinner: {
     width: 14, height: 14, border: '2px solid rgba(0,0,0,.2)',
-    borderTopColor: '#0F0F0E', borderRadius: '50%', display: 'inline-block',
+    borderTopColor: '#FFFFFF', borderRadius: '50%', display: 'inline-block',
   },
 }
