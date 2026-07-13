@@ -26,7 +26,7 @@ function ExtBadge({ ext = '' }) {
   )
 }
 
-function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare }) {
+function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare, onRename }) {
   const [hov, setHov] = useState(false)
   return (
     <tr
@@ -43,6 +43,11 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text)' }}
             title={doc.nome_original}>{doc.nome_original}</div>
+          {doc.departamento_nomes && (
+            <span title={doc.departamento_nomes} style={s.depBadge}>
+              {doc.departamento_nomes}
+            </span>
+          )}
           {doc.token_partilha && (
             <span title="Partilhado (Link)" style={{ fontSize: 10, flexShrink: 0 }}>🌐</span>
           )}
@@ -58,6 +63,7 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare }) {
         <div style={{ display: 'flex', gap: 4, opacity: hov ? 1 : 0, transition: 'opacity .12s' }}>
           <button style={{ ...s.act, color: 'var(--green)' }} onClick={() => downloadDoc(doc.uuid, doc.nome_original)}>↓ Baixar</button>
           <button style={s.act} onClick={() => onMove(doc)}>↗ Mover</button>
+          <button style={s.act} onClick={() => onRename(doc)}>✏️ Renomear</button>
           <button style={{ ...s.act, color: (doc.token_partilha || doc.departamentos_partilhados?.length) ? 'var(--accent)' : 'var(--text2)' }} onClick={() => onShare(doc)} title="Partilhar">🔗</button>
           <button style={{ ...s.act, color: 'var(--danger)' }} onClick={() => onDelete(doc)}>✕</button>
         </div>
@@ -66,7 +72,7 @@ function DocRow({ doc, selected, onSelect, onDelete, onMove, onShare }) {
   )
 }
 
-export default function DocTable({ docs, selecionados, loading, onSelect, onSelectAll, onDelete, onMove, onShare }) {
+export default function DocTable({ docs, selecionados, loading, onSelect, onSelectAll, onDelete, onMove, onShare, onRename }) {
   const allSel = docs.length > 0 && docs.every(d => selecionados.has(d.uuid))
 
   if (loading) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text3)' }}><span className="spin" style={{ width: 18, height: 18, border: '2px solid var(--border2)', borderTopColor: 'var(--accent)', borderRadius: '50%', display: 'inline-block' }} /></div>
@@ -86,7 +92,7 @@ export default function DocTable({ docs, selecionados, loading, onSelect, onSele
           </tr>
         </thead>
         <tbody>
-          {docs.map(d => <DocRow key={d.uuid} doc={d} selected={selecionados.has(d.uuid)} onSelect={onSelect} onDelete={onDelete} onMove={onMove} onShare={onShare} />)}
+          {docs.map(d => <DocRow key={d.uuid} doc={d} selected={selecionados.has(d.uuid)} onSelect={onSelect} onDelete={onDelete} onMove={onMove} onShare={onShare} onRename={onRename} />)}
         </tbody>
       </table>
     </div>
@@ -97,4 +103,16 @@ const s = {
   th: { textAlign: 'left', padding: '7px 10px', fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '0.5px solid var(--border)', whiteSpace: 'nowrap' },
   td: { padding: '9px 10px', borderBottom: '0.5px solid var(--border)', verticalAlign: 'middle' },
   act: { padding: '3px 8px', borderRadius: 4, border: '0.5px solid var(--border2)', background: 'var(--bg2)', color: 'var(--text2)', cursor: 'pointer', fontSize: 11, fontWeight: 500 },
+  depBadge: {
+    fontSize: 9,
+    background: 'var(--bg3)',
+    color: 'var(--text2)',
+    padding: '2px 6px',
+    borderRadius: 12,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: 90,
+    border: '1px solid var(--border)'
+  }
 }

@@ -1,5 +1,5 @@
-//const BASE = import.meta.env.VITE_API_BASE ?? 'https://docback.kapital360.ao/api'
-const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3001/api'
+// Detecta se está em localhost ou produção (front e back em domínios diferentes)
+const BASE = import.meta.env.VITE_API_BASE ?? (window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : 'https://docback.kapital360.ao/api')
 
 function getToken() { return localStorage.getItem('dv_token') || '' }
 
@@ -45,6 +45,8 @@ export const getDocs = (params = {}) => {
   Object.entries(params).forEach(([k, v]) => v != null && q.set(k, v))
   return req('/documentos?' + q)
 }
+
+export const renomearDoc = (uuid, nome) => req(`/documentos/${uuid}/renomear`, { method: 'PATCH', body: { nome } })
 
 export async function uploadDocs(files, pastaUuid) {
   const form = new FormData()

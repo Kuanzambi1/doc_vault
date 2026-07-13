@@ -53,15 +53,13 @@ router.get('/', async (req, res) => {
     // Buscar filhos diretos
     const [pastas] = await db.execute(
       `SELECT p.id, p.uuid, p.nome, p.pai_id, p.criado_em, p.token_partilha,
-              COUNT(d.id) AS total_docs,
-              COUNT(sp.id) AS total_subpastas,
-              (SELECT GROUP_CONCAT(departamento_id) FROM pasta_departamentos WHERE pasta_id = p.id) AS departamentos_partilhados
+              (SELECT COUNT(id) FROM documentos WHERE pasta_id = p.id) AS total_docs,
+              (SELECT COUNT(id) FROM pastas WHERE pai_id = p.id) AS total_subpastas,
+              (SELECT GROUP_CONCAT(departamento_id) FROM pasta_departamentos WHERE pasta_id = p.id) AS departamentos_partilhados,
+              (SELECT GROUP_CONCAT(dp.nome) FROM pasta_departamentos pd JOIN departamentos dp ON dp.id = pd.departamento_id WHERE pd.pasta_id = p.id) AS departamento_nomes
        FROM pastas p
-       LEFT JOIN documentos d  ON d.pasta_id = p.id
-       LEFT JOIN pastas     sp ON sp.pai_id  = p.id
        WHERE p.pai_id ${paiId ? '= ?' : 'IS NULL'}
          ${accessWhere}
-       GROUP BY p.id
        ORDER BY p.nome ASC`,
       queryParams
     )

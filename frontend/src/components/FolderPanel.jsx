@@ -245,10 +245,39 @@ function FolderRow({ pasta, onOpen, onDelete, onRenameRow, onShare }) {
       style={{ ...s.folderRow, background: hov ? 'var(--bg3)' : 'transparent' }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => { if (!menuOpen) setHov(false) }}
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(true) }}
     >
       <button style={s.folderBtn} onClick={() => onOpen(pasta.uuid)}>
-        <span style={{ fontSize: 14 }}>{pasta.token_partilha ? '🌐' : (pasta.departamentos_partilhados?.length ? '👥' : '📁')}</span>
+        <span style={{ fontSize: 14, display: 'inline-flex', alignItems: 'center', position: 'relative', flexShrink: 0, width: 16 }}>
+          📁
+          {(pasta.token_partilha || pasta.departamentos_partilhados?.length) && (
+            <span 
+              style={{
+                position: 'absolute',
+                bottom: -2,
+                right: -4,
+                fontSize: 9,
+                background: 'var(--bg2)',
+                borderRadius: '50%',
+                width: 12,
+                height: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }} 
+              title={pasta.token_partilha ? 'Partilhado publicamente' : 'Partilhado com departamentos'}
+            >
+              {pasta.token_partilha ? '🌐' : '👥'}
+            </span>
+          )}
+        </span>
         <span style={s.folderName}>{pasta.nome}</span>
+        {pasta.departamento_nomes && (
+          <span style={s.depBadge} title={pasta.departamento_nomes}>
+            {pasta.departamento_nomes}
+          </span>
+        )}
         <span style={s.folderMeta}>
           {pasta.total_docs > 0 && `${pasta.total_docs} doc${pasta.total_docs > 1 ? 's' : ''}`}
           {pasta.total_subpastas > 0 && ` · ${pasta.total_subpastas} pasta${pasta.total_subpastas > 1 ? 's' : ''}`}
@@ -308,13 +337,26 @@ const s = {
     marginBottom: 1, position: 'relative',
   },
   folderBtn: {
-    flex: 1, display: 'flex', alignItems: 'center', gap: 7,
+    flex: 1, display: 'flex', alignItems: 'center', gap: 7, minWidth: 0,
     padding: '6px 8px', background: 'none', border: 'none',
     color: 'var(--text)', cursor: 'pointer', textAlign: 'left',
     borderRadius: 'var(--r)',
   },
   folderName: { flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 13 },
-  folderMeta: { fontSize: 11, color: 'var(--text3)', flexShrink: 0 },
+  folderMeta: { fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' },
+  depBadge: {
+    fontSize: 10,
+    background: 'var(--bg3)',
+    color: 'var(--text2)',
+    padding: '2px 6px',
+    borderRadius: 12,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: 90,
+    flexShrink: 1,
+    border: '1px solid var(--border)'
+  },
   menuBtn: {
     width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer',

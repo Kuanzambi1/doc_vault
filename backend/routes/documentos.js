@@ -41,13 +41,15 @@ router.post('/', upload.array('files', 50), async (req, res) => {
 
   const resultados = []
   for (const file of req.files) {
-    const ext  = path.extname(file.originalname).toLowerCase().replace('.', '')
+    // Corrige a codificação (Multer/busboy usa latin1 por defeito)
+    const originalNameUtf8 = Buffer.from(file.originalname, 'latin1').toString('utf8')
+    const ext  = path.extname(originalNameUtf8).toLowerCase().replace('.', '')
     const uuid = uuidv4()
     try {
       const [r] = await db.execute(
         `INSERT INTO documentos (uuid, nome_original, nome_arquivo, tipo_mime, tamanho_bytes, extensao, pasta_id, dono_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [uuid, file.originalname, file.filename, file.mimetype, file.size, ext, pastaId, req.user.id]
+        [uuid, originalNameUtf8, file.filename, file.mimetype, file.size, ext, pastaId, req.user.id]
       )
 
       if (req.user.departamento_ids && req.user.departamento_ids.length > 0) {
@@ -55,10 +57,10 @@ router.post('/', upload.array('files', 50), async (req, res) => {
         await db.query('INSERT IGNORE INTO documento_departamentos (documento_id, departamento_id) VALUES ?', [depsVals])
       }
 
-      resultados.push({ id: r.insertId, uuid, nome_original: file.originalname, ok: true })
+      resultados.push({ id: r.insertId, uuid, nome_original: originalNameUtf8, ok: true })
     } catch (err) {
       fs.unlink(file.path, () => {})
-      resultados.push({ nome_original: file.originalname, erro: err.message })
+      resultados.push({ nome_original: originalNameUtf8, erro: err.message })
     }
   }
   res.status(201).json({ documentos: resultados })
@@ -102,7 +104,8 @@ router.get('/', async (req, res) => {
       `SELECT d.id, d.uuid, d.nome_original, d.tipo_mime, d.tamanho_bytes,
               d.extensao, d.criado_em, d.pasta_id, d.token_partilha,
               p.nome AS pasta_nome, p.uuid AS pasta_uuid,
-              (SELECT GROUP_CONCAT(departamento_id) FROM documento_departamentos WHERE documento_id = d.id) AS departamentos_partilhados
+              (SELECT GROUP_CONCAT(departamento_id) FROM documento_departamentos WHERE documento_id = d.id) AS departamentos_partilhados,
+              (SELECT GROUP_CONCAT(dp.nome) FROM documento_departamentos dd JOIN departamentos dp ON dp.id = dd.departamento_id WHERE dd.documento_id = d.id) AS departamento_nomes
        FROM documentos d LEFT JOIN pastas p ON p.id = d.pasta_id
        ${cond} ORDER BY d.criado_em DESC LIMIT ? OFFSET ?`,
       [...params, limite, offset]
@@ -234,6 +237,26 @@ router.patch('/:uuid/mover', async (req, res) => {
     )
     if (!r.affectedRows) return res.status(404).json({ erro: 'Documento não encontrado' })
     res.json({ mensagem: 'Movido' })
+  } catch (err) {
+    res.status(500).json({ erro: err.message })
+  }
+})/* Renomear */
+router.patch('/:uuid/renomear', async (req, res) => {
+  try {
+    const db = await getPool()
+    const { nome } = req.body
+    if (!nome?.trim()) return res.status(400).json({ erro: 'Nome obrigatório' })
+
+    const [[doc]] = await db.execute('SELECT id, dono_id FROM documentos WHERE uuid = ?', [req.params.uuid])
+    if (!doc) return res.status(404).json({ erro: 'Documento não encontrado' })
+    if (doc.dono_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ erro: 'Sem permissão' })
+
+    const [r] = await db.execute(
+      'UPDATE documentos SET nome_original = ? WHERE id = ?',
+      [nome.trim(), doc.id]
+    )
+    if (!r.affectedRows) return res.status(404).json({ erro: 'Documento não encontrado' })
+    res.json({ mensagem: 'Renomeado com sucesso' })
   } catch (err) {
     res.status(500).json({ erro: err.message })
   }

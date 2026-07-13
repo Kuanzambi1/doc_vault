@@ -25,16 +25,13 @@ app.use('/api/utilizadores', usersRoutes)
 app.use('/api/departamentos', departamentosRoutes)
 app.get('/api/status', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 
-// Serve build React em produção
-const dist = path.join(__dirname, '..', 'frontend', 'dist')
-app.use(express.static(dist))
-app.get('*', (_req, res) => res.sendFile(path.join(dist, 'index.html')))
+// Backend is purely an API (Frontend is on another domain)
 
 app.use((err, _req, res, _next) => {
   if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ erro: 'Ficheiro demasiado grande' })
   if (err.message?.includes('Tipo não permitido')) return res.status(415).json({ erro: err.message })
   console.error('❌', err.message)
-  res.status(500).json({ erro: 'Erro interno' })
+  res.status(500).json({ erro: err.message })
 })
 
 async function start() {

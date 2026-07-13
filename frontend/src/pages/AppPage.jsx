@@ -13,6 +13,7 @@ export default function AppPage({ user, onLogout, toast }) {
   // Localização atual (uuid da pasta ou null = raiz)
   const [pastaUuid,   setPastaUuid]   = useState(null)
   const [view,        setView]        = useState('files') // 'files' | 'users' (admin)
+  const [sidebarWidth,setSidebarWidth]= useState(250)
 
   // Documentos
   const [docs,        setDocs]        = useState([])
@@ -31,6 +32,8 @@ export default function AppPage({ user, onLogout, toast }) {
   // Modais
   const [modalDelDoc,     setModalDelDoc]     = useState(null)
   const [modalMover,      setModalMover]      = useState(null)  // doc ou null (= usa selecionados)
+  const [modalRenomearDoc, setModalRenomearDoc] = useState(null)
+  const [renameDocInput,   setRenameDocInput]   = useState('')
   const [todasPastas,     setTodasPastas]     = useState([])
   const [destPasta,       setDestPasta]       = useState('')
   const [modalPassword,   setModalPassword]   = useState(false)
@@ -105,6 +108,23 @@ export default function AppPage({ user, onLogout, toast }) {
     } catch (e) { toast(e.message, 'error') }
   }
 
+  /* ── Renomear doc ── */
+  const abrirRenomearDoc = (doc) => {
+    setRenameDocInput(doc.nome_original)
+    setModalRenomearDoc(doc)
+  }
+
+  const confirmarRenomearDoc = async () => {
+    if (!modalRenomearDoc || !renameDocInput.trim()) return
+    if (renameDocInput.trim() === modalRenomearDoc.nome_original) { setModalRenomearDoc(null); return }
+    try {
+      await api.renomearDoc(modalRenomearDoc.uuid, renameDocInput.trim())
+      toast('Documento renomeado', 'success')
+      setModalRenomearDoc(null)
+      carregarDocs(pagina, busca)
+    } catch (e) { toast(e.message, 'error') }
+  }
+
   /* ── Eliminar lote ── */
   const eliminarSelecionados = async () => {
     if (!selecionados.size) return
@@ -150,6 +170,27 @@ export default function AppPage({ user, onLogout, toast }) {
     searchTimer.current = setTimeout(() => { setPagina(1); carregarDocs(1, v) }, 350)
   }
 
+  const handleResize = useCallback((e) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = sidebarWidth
+
+    const onMouseMove = (moveEvent) => {
+      const newWidth = Math.max(160, Math.min(startWidth + moveEvent.clientX - startX, 800))
+      setSidebarWidth(newWidth)
+    }
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      document.body.style.cursor = 'default'
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    document.body.style.cursor = 'col-resize'
+  }, [sidebarWidth])
+
   return (
     <div style={s.app}>
       {/* Topbar */}
@@ -175,13 +216,21 @@ export default function AppPage({ user, onLogout, toast }) {
 
       <div style={s.body}>
         {/* Sidebar pastas */}
-        <aside style={s.sidebar}>
+        <aside style={{ ...s.sidebar, width: sidebarWidth }}>
           <FolderPanel
             onLocationChange={setPastaUuid}
             onToast={toast}
             onBreadcrumbChange={setFolders}
           />
         </aside>
+
+        {/* Resizer */}
+        <div 
+          style={{ width: 4, cursor: 'col-resize', background: 'transparent', flexShrink: 0, zIndex: 10, margin: '0 -2px' }}
+          onMouseEnter={e => e.target.style.background = 'var(--accent)'}
+          onMouseLeave={e => e.target.style.background = 'transparent'}
+          onMouseDown={handleResize}
+        />
 
         {/* Main content */}
         <main style={s.main}>
@@ -269,6 +318,7 @@ export default function AppPage({ user, onLogout, toast }) {
                 onDelete={setModalDelDoc}
                 onMove={abrirMover}
                 onShare={setModalPartilha}
+                onRename={abrirRenomearDoc}
               />
             </div>
 
@@ -317,6 +367,26 @@ export default function AppPage({ user, onLogout, toast }) {
           <Modal.Footer>
             <Btn variant="ghost" onClick={() => setModalDelDoc(null)}>Cancelar</Btn>
             <Btn variant="danger" onClick={confirmarEliminarDoc}>Eliminar</Btn>
+          </Modal.Footer>
+        </Modal>
+      )}
+
+      {/* Modal: Renomear doc */}
+      {modalRenomearDoc && (
+        <Modal title="Renomear documento" onClose={() => setModalRenomearDoc(null)}>
+          <div style={{ padding: '1rem 1.25rem' }}>
+            <label style={s.formLabel}>Nome</label>
+            <input
+              autoFocus
+              value={renameDocInput}
+              onChange={e => setRenameDocInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && confirmarRenomearDoc()}
+              style={s.select}
+            />
+          </div>
+          <Modal.Footer>
+            <Btn variant="ghost" onClick={() => setModalRenomearDoc(null)}>Cancelar</Btn>
+            <Btn variant="primary" onClick={confirmarRenomearDoc} disabled={!renameDocInput.trim()}>Renomear</Btn>
           </Modal.Footer>
         </Modal>
       )}
